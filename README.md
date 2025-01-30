@@ -1,12 +1,17 @@
-# satanic (WIP)
+# satanic
 
-A PyTorch implementation of the Mechanic learning rate scale tuner [1].
+![Build](https://github.com/dscamiss/generalized-newtons-method/actions/workflows/python-package.yml/badge.svg)
+
+A PyTorch implementation of the Mechanic learning scheduler introduced in [1].
 
 # Installation
 
 # Usage
 
 # TODO
+
+[ ] Finish README
+[ ] Add examples
 
 # References
 
