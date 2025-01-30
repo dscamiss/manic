@@ -12,9 +12,9 @@ The reference implementation, written by the authors of [1], can be found in [th
 
 # TODO
 
-[ ] Finish README
-[ ] Add example(s)
-[ ] Add comparison with reference implementation
+- [ ] Finish README
+- [ ] Add example(s)
+- [ ] Add comparison with reference implementation
 
 # References
 
