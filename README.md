@@ -2,7 +2,7 @@
 
 ![Build](https://github.com/dscamiss/satanic/actions/workflows/python-package.yml/badge.svg)
 
-An alternative implementation of the Mechanic learning scheduler introduced in [1].
+An alternative PyTorch implementation of the Mechanic learning scheduler [1].
 
 The reference implementation, written by the authors of [1], can be found in [this repository](https://github.com/optimizedlearning/mechanic).
 
@@ -13,7 +13,8 @@ The reference implementation, written by the authors of [1], can be found in [th
 # TODO
 
 [ ] Finish README
-[ ] Add examples
+[ ] Add example(s)
+[ ] Add comparison with reference implementation
 
 # References
 
