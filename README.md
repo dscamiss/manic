@@ -1,4 +1,4 @@
-# satanic
+# satanic (WIP)
 
 ![Build](https://github.com/dscamiss/satanic/actions/workflows/python-package.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg)
