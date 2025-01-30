@@ -1,8 +1,10 @@
 # satanic
 
-![Build](https://github.com/dscamiss/generalized-newtons-method/actions/workflows/python-package.yml/badge.svg)
+![Build](https://github.com/dscamiss/satanic/actions/workflows/python-package.yml/badge.svg)
 
-A PyTorch implementation of the Mechanic learning scheduler introduced in [1].
+An alternative implementation of the Mechanic learning scheduler introduced in [1].
+
+The reference implementation, written by the authors of [1], can be found in [this repository](https://github.com/optimizedlearning/mechanic).
 
 # Installation
 
