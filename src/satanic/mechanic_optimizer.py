@@ -1,6 +1,6 @@
-"""Mechanic learning rate scheduler."""
+"""Wrapped optimizer for Mechanic learning rate scheduler."""
 
-from typing import Any, Type
+from typing import Any
 
 import torch
 from jaxtyping import Num, jaxtyped
