@@ -26,4 +26,5 @@ def set_seed(seed: int) -> None:
 def setup_session() -> None:
     """Set up for tests."""
     set_seed(11)
+    # Working in float64 avoids numerical issues in tests
     torch.set_default_dtype(torch.float64)

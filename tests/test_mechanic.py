@@ -8,7 +8,7 @@ import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from src.satanic import MechanicOptimizer, make_mechanic_optimizer
+from src.satanic import MechanicOptimizer
 
 
 @pytest.fixture(name="dims")
@@ -36,7 +36,7 @@ def fixture_model(dims: dict[str, int]) -> nn.Module:
 @pytest.fixture(name="sgd")
 def fixture_sgd(model: nn.Module) -> MechanicOptimizer:
     """Instance of `MechanicOptimizer` with vanilla SGD base optimizer class."""
-    return make_mechanic_optimizer(torch.optim.SGD, model.parameters())
+    return MechanicOptimizer(torch.optim.SGD(model.parameters()))
 
 
 @pytest.fixture(name="x")
@@ -51,12 +51,11 @@ def fixture_y(dims: dict[str, int]) -> Float[Tensor, "..."]:
     return torch.randn(dims["batch"], dims["output"]).requires_grad_(False)
 
 
-def test_inheritance_hierarchy(sgd: MechanicOptimizer) -> None:
-    """Test `MechanicOptimizer` inheritance hierarchy."""
-    assert isinstance(sgd, MechanicOptimizer), "Invalid class type"
-    assert len(type(sgd).__bases__) == 2, "Invalid inheritance pattern"
-    assert type(sgd).__bases__[0] == MechanicOptimizer, "Invalid superclass type"
-    assert type(sgd).__bases__[1] == torch.optim.SGD, "Invalid superclass type"
+def test_class_types(sgd: MechanicOptimizer) -> None:
+    """Test `MechanicOptimizer` class types."""
+    err_str = "Invalid class type"
+    assert isinstance(sgd, MechanicOptimizer), err_str
+    assert isinstance(sgd._base_optimizer, torch.optim.SGD), err_str
 
 
 def test_refresh_param_cache(model: nn.Module, sgd: MechanicOptimizer) -> None:

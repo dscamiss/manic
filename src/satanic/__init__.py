@@ -1,5 +1,5 @@
 """Exports for main module."""
 
-from src.satanic.mechanic import MechanicOptimizer, make_mechanic_optimizer
+from src.satanic.mechanic_optimizer import MechanicOptimizer
 
-__all__ = ["make_mechanic_optimizer", "MechanicOptimizer"]
+__all__ = ["MechanicOptimizer"]
