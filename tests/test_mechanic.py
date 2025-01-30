@@ -130,7 +130,7 @@ def test_restore_params(model: nn.Module, sgd: MechanicOptimizer) -> None:
 
     # Modify parameter values
     for param in model.parameters():
-        param = torch.randn_like(param)
+        param.data = torch.randn_like(param)
 
     # Restore parameter values
     sgd._restore_params()
