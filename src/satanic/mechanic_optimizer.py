@@ -12,6 +12,8 @@ from src.satanic.types import Optimizer
 # flake8: noqa=DCO010
 # pylint: disable=too-few-public-methods
 
+# TODO: Implement step()
+
 
 class MechanicOptimizer:
     """
@@ -83,6 +85,11 @@ class MechanicOptimizer:
             for group in self.param_groups:
                 for param in group["params"]:
                     param.copy_(self._param_cache[param])
+
+    @property
+    def base_optimizer(self) -> Optimizer:
+        """Getter for `_base_optimizer`."""
+        return self._base_optimizer
 
     @jaxtyped(typechecker=typechecker)
     def get_update(self, param: Num[Tensor, "..."]) -> Num[Tensor, "..."]:
