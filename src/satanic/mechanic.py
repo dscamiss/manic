@@ -25,6 +25,7 @@ _TensorDict = dict[str, Num[Tensor, "..."]]
 _DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
 _DEFAULT_LR = 1e-3
 
+
 @dataclass
 class MechanicParams:
     r"""
@@ -40,7 +41,7 @@ class MechanicParams:
     """
 
     beta: Tensor = _DEFAULT_BETA
-    lambda_decay: int = 1e-2
+    lambda_decay: float = 1e-2
     s_init: float = 1e-8
     epsilon: float = 1e-8
 
