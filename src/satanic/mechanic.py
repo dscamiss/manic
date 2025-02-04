@@ -22,7 +22,7 @@ from src.satanic.mechanic_optimizer import MechanicOptimizer
 # pylint: disable=invalid-name,not-callable
 
 _DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
-_DEFAULT_LR = 1e-3
+_DEFAULT_S_SUM = 0.0
 
 
 @dataclass
@@ -173,25 +173,32 @@ class Mechanic(LRScheduler):
         state.s = state.W / (torch.sqrt(state.v) + params.epsilon)
 
     @torch.no_grad()
-    def compute_s_sum(self) -> float:
-        """Compute the current learning rate."""
+    def get_lr(self) -> float:
+        """
+        Compute the current sum of components.
+
+        This is (effectively) the learning rate used by `Mechanic`.
+
+        Calling this function should *not* change the learning rates
+        used by the base optimizer.
+        """
         if self.last_epoch == 0:
-            return _DEFAULT_LR
+            return _DEFAULT_S_SUM
         self._compute_s_state()
         return torch.sum(self._mechanic_state.s).item()
 
     @torch.no_grad()
-    def step(self, epoch: Optional[int] = None) -> None:
+    def step(self) -> None:  # pylint: disable=arguments-differ
         """Run one scheduler step."""
         optimizer = self._mechanic_optimizer
 
-        # Increment last "epoch" index (in this case, the batch index)
+        # Increment last epoch index (really, the batch index)
         self.last_epoch += 1
 
-        # Get previous and current sum of components
-        s_sum = self.compute_s_sum()
+        # Compute current sum of components
+        s_sum = self.get_lr()
 
-        # Populate learning rates in optimizer
+        # Send it to the optimizer
         optimizer.set_s_sum(s_sum)
 
     def state_dict(self) -> dict[str, Any]:
