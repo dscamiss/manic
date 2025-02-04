@@ -7,12 +7,12 @@ References:
     Mechanic: A Learning Rate Tuner, arXiv:2306.00144.
 """
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Optional
 
 import torch
-from jaxtyping import Float, jaxtyped
-from torch import Tensor, nn
+from jaxtyping import jaxtyped
+from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
@@ -20,8 +20,6 @@ from src.satanic.mechanic_optimizer import MechanicOptimizer
 
 # flake8: noqa=DCO010
 # pylint: disable=invalid-name,not-callable
-
-_TensorDict = dict[str, Float[Tensor, "..."]]
 
 _DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
 _DEFAULT_LR = 1e-3
@@ -34,20 +32,16 @@ class MechanicParams:
 
     Correspondence with the parameters of Algorithm 1 in [1]:
 
-        beta   : $$\beta$$ (n-dimensional)
-        decay  : $$\lambda$$ (scalar)
-        s_init : $$s_{init}$$ (scalar)
-        epsilon: $$\epsilon$$ (scalar)
-
-    Extra parameters:
-        store_delta: Determines if $$\mathbf{\Delta}_t$$ is stored between iterations.
+        beta   : \beta (n-dimensional)
+        decay  : \lambda (scalar)
+        s_init : s_{init} (scalar)
+        epsilon: \epsilon (scalar)
     """
 
     beta: Tensor = _DEFAULT_BETA
     decay: float = 1e-2
     s_init: float = 1e-8
     epsilon: float = 1e-8
-    store_delta: bool = True
 
 
 @dataclass
@@ -56,26 +50,15 @@ class MechanicState:
     Dataclass for `Mechanic` internal state variables.
 
     Correspondence with the variables of Algorithm 1 in [1]:
-
-        ref_params: $$\mathbf{x}_{ref}$$.
-        delta     : $$\mathbf{\Delta}_t$$
-        h         : $$h_t$$ (scalar)
-        m         : $$m_t$$ (n-dimensional)
-        v         : $$v_t$$ (n-dimensional)
-        r         : $$r_t$$ (n-dimensional)
-        W         : $$W_t$$ (n-dimensional)
-        s         : $$s_t$$ (n-dimensional)
-
-    Extra states:
-        s_sum: Sum of components of `s`.
+        h: h_t (scalar)
+        m: m_t (n-dimensional)
+        v: v_t (n-dimensional)
+        r: r_t (n-dimensional)
+        W: W_t (n-dimensional)
+        s: s_t (n-dimensional)
     """
 
-    ref_params: _TensorDict = field(default_factory=dict)
-    delta: _TensorDict = field(default_factory=dict)
-
-    h: Tensor = torch.as_tensor(0.0)
-    s_sum: Tensor = torch.as_tensor(0.0)
-
+    h: Tensor = Tensor()
     m: Tensor = Tensor()
     v: Tensor = Tensor()
     r: Tensor = Tensor()
@@ -93,144 +76,123 @@ class Mechanic(LRScheduler):
         mechanic_params: Core mechanic parameters.
     """
 
+    @torch.no_grad()
     def __init__(
         self,
         mechanic_optimizer: MechanicOptimizer,
         last_epoch: int = -1,
         mechanic_params: MechanicParams = MechanicParams(),
     ) -> None:
-        super().__init__(mechanic_optimizer.base_optimizer, last_epoch)
         self._mechanic_optimizer = mechanic_optimizer
         self._mechanic_params = mechanic_params
         self._mechanic_state = MechanicState()
+
+        super().__init__(mechanic_optimizer.base_optimizer, last_epoch)
+
+        # Initialize internal state variables
         self._initialize_state()
 
-        # Compute derived parameters
-        self._mechanic_params.beta_squared = torch.pow(self._mechanic_params.beta, 2)
-
-    @jaxtyped(typechecker=typechecker)
-    @torch.no_grad()
-    def _get_delta(self, x: nn.Parameter) -> Float[Tensor, "..."]:
-        params = self._mechanic_params
-        state = self._mechanic_state
-
-        if params.store_delta:
-            delta = state.delta[x]
-        else:
-            # Recompute $$\Delta_t$$
-            x_ref = state.ref_params[x]
-            denom = state.s_sum.add_(params.epsilon)
-            delta = (x - x_ref).div_(denom)
-        return delta
+        # Compute derived parameter(s)
+        beta = self._mechanic_params.beta
+        self._mechanic_params.beta_sq = torch.pow(beta, 2.0)
 
     @torch.no_grad()
     def _initialize_state(self) -> None:
         """Initialize internal state variables."""
         state = self._mechanic_state
-
-        for group in self.optimizer.param_groups:
-            for x in group["params"]:
-                if self._mechanic_params.store_delta:
-                    state.delta[x] = torch.zeros_like(x)
-                state.ref_params[x] = x.clone()
+        beta = self._mechanic_params.beta
 
         state.h = torch.as_tensor(0.0)
-        state.s_sum = torch.as_tensor(0.0)
-
-        beta = self._mechanic_params.beta
         state.m = torch.zeros_like(beta)
         state.v = torch.zeros_like(beta)
         state.r = torch.zeros_like(beta)
+        state.W = torch.zeros_like(beta)
         state.s = torch.zeros_like(beta)
 
     @jaxtyped(typechecker=typechecker)
     @torch.no_grad()
-    def _compute_delta(self) -> None:
-        """Compute next "delta" terms."""
-        # Make aliases for brevity
-        optimizer = self._mechanic_optimizer
-        state = self._mechanic_state
+    def _compute_inner_product_state(self) -> None:
+        """
+        Compute the current inner product state.
 
-        # 9: $$\mathbf{\Delta}_{t+1} = \mathbf{\Delta}_t +\mathbf{u}_t$$
-        for group in optimizer.param_groups:
-            for x in group["params"]:
-                update = optimizer.get_update(x)
-                state.delta[x].add_(update)
-
-    @jaxtyped(typechecker=typechecker)
-    @torch.no_grad()
-    def _compute_inner_product(self) -> None:
-        """Compute the current inner product term."""
+        This implements line 10 of Algorithm 1 in [1].
+        """
         # Make aliases for brevity
         optimizer = self._mechanic_optimizer
         params = self._mechanic_params
         state = self._mechanic_state
 
-        # Compute inner product term
+        # Compute current sum of components
+        s_sum = torch.sum(state.s)
+
+        # Compute current inner product state
         state.h.zero_()
         for group in optimizer.param_groups:
             for x in group["params"]:
-                delta_flat = self._get_delta(x).flatten()
+                delta_flat = optimizer.get_delta(x).flatten()
                 grad_flat = x.grad.flatten()
                 grad_norm = torch.norm(x.grad)
                 x_norm = torch.norm(x)
-                x_scale = (params.decay * state.s_sum * grad_norm) / x_norm  # TODO: Check OOO
+                x_scale = (params.decay * s_sum * grad_norm) / x_norm
                 inner_product = torch.inner(delta_flat, grad_flat + x_scale * x.flatten())
                 state.h.add_(inner_product)
 
     @torch.no_grad()
-    def _compute_remaining_states(self) -> None:
-        """Compute remaining internal states."""
+    def _compute_aux_states(self) -> None:
+        """
+        Compute the current auxiliary states.
+
+        This implements lines 11 through 16 of Algorithm 1 in [1].
+        """
         # Make aliases for brevity
         params = self._mechanic_params
         state = self._mechanic_state
 
-        # $$m_t \leftarrow \mathrm{max}(\beta m_{t-1}, h_t)$$
+        # Compute current auxiliary states
         state.m = torch.max(params.beta * state.m, state.h)
-
-        # $$v_t \leftarrow \beta^2 v_{t-1} + h_t^2$$
         state.v = params.beta_squared * state.v + state.h * state.h
-
-        # $$r_t \leftarrow \mathrm{max}(\beta r_{t-1} - h_t s_t, 0_n)$$
-        state.r = params.beta * state.r - state.h * state.s
-        state.r = torch.clamp(state.r, 0.0, None)
-
-        # $$W_t \leftarrow (s_{init} / n) m_t + r_t$$
+        state.r = torch.clamp(params.beta * state.r - state.h * state.s, 0.0)
         state.W = (params.s_init / state.m.numel()) * state.m + state.r
 
-        # $$s_{t+1} \leftarrow W_t / (\sqrt{v_t}+ \epsilon)$$
+    @torch.no_grad()
+    def _compute_s_state(self) -> None:
+        """
+        Compute the current `s` state.
+
+        This implements lines 10 through 16 of Algorithm 1 in [1].
+        """
+        # Make aliases for brevity
+        params = self._mechanic_params
+        state = self._mechanic_state
+
+        # Compute inner product and auxiliary states
+        self._compute_inner_product_state()
+        self._compute_aux_states()
+
+        # Compute current `s` state
         state.s = state.W / (torch.sqrt(state.v) + params.epsilon)
 
-        # Compute sum of components of `s`
-        state.s_sum = torch.sum(state.s)
-
-    def _update_learning_rates(self) -> None:
-        """Update learning rates in optimizer."""
-        for group in self._mechanic_optimizer.param_groups:
-            group["lr"] = self._mechanic_state.s_sum
-
-    def get_lr(self) -> list[float]:
-        """Compute learning rate."""
+    @torch.no_grad()
+    def compute_s_sum(self) -> float:
+        """Compute the current learning rate."""
         if self.last_epoch == 0:
-            return [_DEFAULT_LR for group in self.optimizer.param_groups]
+            return _DEFAULT_LR
+        self._compute_s_state()
+        return torch.sum(self._mechanic_state.s).item()
 
-        # 7: Send $$\mathbf{g}_t$$ to BASE, receive update $$\mathbf{u}_t$$
-        self._mechanic_optimizer._refresh_update_cache()
+    @torch.no_grad()
+    def step(self, epoch: Optional[int] = None) -> None:
+        """Run one scheduler step."""
+        optimizer = self._mechanic_optimizer
 
-        # 10: $$h_t \leftarrow \langle \Delta_t, g_t + S_t \rangle$$
-        #     $$S_t = \frac{\lambda (\sum_{i=1}^n s_{t,i}) \| g_t \| x_t}{\| x_t \|}$$
-        self._compute_inner_product()
+        # Increment last "epoch" index (in this case, the batch index)
+        self.last_epoch += 1
 
-        # Compute "delta" state, if needed
-        # 9: $$\Delta_{t+1} \leftarrow = \Delta_t + u_t$$
-        if self._mechanic_params.store_delta:
-            self._compute_delta()
+        # Get previous and current sum of components
+        s_sum = self.compute_s_sum()
 
-        # Compute remaining states
-        self._compute_remaining_states()
-
-        # 16: $$x_{t+1} \leftarrow x_{ref} + \left( \sum_{i=1}^n s_{t+1,i} \right) \Delta_{t+1}$$
-        self._update_learning_rates()
+        # Populate learning rates in optimizer
+        optimizer.set_s_sum(s_sum)
 
     def state_dict(self) -> dict[str, Any]:
         """Return scheduler state dict."""

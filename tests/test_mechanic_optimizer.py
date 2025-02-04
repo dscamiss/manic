@@ -9,6 +9,7 @@ from jaxtyping import Float
 from torch import Tensor, nn
 
 from src.satanic import MechanicOptimizer
+from src.satanic.types import ParamTensorDict
 
 
 def test_class_types(sgd: MechanicOptimizer) -> None:
@@ -18,90 +19,90 @@ def test_class_types(sgd: MechanicOptimizer) -> None:
     assert isinstance(sgd._base_optimizer, torch.optim.SGD), err_str
 
 
-def test_refresh_param_cache(model: nn.Module, sgd: MechanicOptimizer) -> None:
-    """Test `_refresh_param_cache()` behavior."""
-    # Cache parameter values for comparisons
-    param_cache = {}
-    for param in model.parameters():
-        param_cache[param] = param.clone().detach()
+def test_refresh_params(model: nn.Module, sgd: MechanicOptimizer) -> None:
+    """Test `_refresh_params()` behavior."""
+    # Make local parameter cache for comparisons
+    params = ParamTensorDict()
+    for x in model.parameters():
+        params[x] = x.clone().detach()
 
-    # Cache parameter values
-    sgd._refresh_param_cache()
+    # Refresh parameter cache with current values
+    sgd._refresh_params()
 
     # Check for common parameters
-    err_str = "Parameter cache keys differ from expected"
-    assert param_cache.keys() == sgd._param_cache.keys(), err_str
+    err_str = "Parameter cache keys differ"
+    assert params.keys() == sgd._params.keys(), err_str
 
     # Check parameter values
     err_str = "Error in parameter values"
-    for param in param_cache:  # pylint: disable=consider-using-dict-items
-        assert torch.equal(param_cache[param], sgd._param_cache[param]), err_str
+    for x in params:  # pylint: disable=consider-using-dict-items
+        assert torch.equal(params[x], sgd._params[x]), err_str
 
 
-def test_refresh_update_cache(
+def test_refresh_updates(
     model: nn.Module, sgd: MechanicOptimizer, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
 ) -> None:
-    """Test `refresh_update_cache()` behavior."""
+    """Test `refresh_updates()` behavior."""
     # Compute gradients
     sgd.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
-    # Cache updates
-    sgd._refresh_update_cache()
+    # Refresh update cache with current values
+    sgd._refresh_updates()
 
     # Check updates
     err_str = "Error in updates"
     for group in sgd.param_groups:
-        for param in group["params"]:
+        for p in group["params"]:
+            update = sgd.get_update(p)
             if "maximize" not in group or not group["maximize"]:
-                expected_update = param.grad
+                expected_update = p.grad
             else:
-                expected_update = -1.0 * param.grad
-            update = sgd.get_update(param)
+                expected_update = -1.0 * p.grad
             assert torch.allclose(update, expected_update), err_str
 
 
-def test_refresh_update_cache_side_effects(model: nn.Module, sgd: MechanicOptimizer) -> None:
-    """Test `_refresh_update_cache()` for side effects."""
-    # Cache parameter values for comparisons
-    param_cache = {}
-    for param in model.parameters():
-        param_cache[param] = param.clone().detach()
+def test_refresh_updates_side_effects(model: nn.Module, sgd: MechanicOptimizer) -> None:
+    """Test `_refresh_updates()` for side effects."""
+    # Make local parameter cache for comparisons
+    params = ParamTensorDict()
+    for x in model.parameters():
+        params[x] = x.clone().detach()
 
-    # Cache updates
-    sgd._refresh_update_cache()
+    # Refresh update cache with current values
+    sgd._refresh_updates()
 
     # Check if parameter values were modified
     err_str = "Parameter values were modified"
-    for param in model.parameters():
-        assert torch.all(param == param_cache[param]), err_str
+    for x in model.parameters():
+        assert torch.all(x == params[x]), err_str
 
 
 def test_restore_params(model: nn.Module, sgd: MechanicOptimizer) -> None:
     """Test `_restore_params()` behavior."""
-    # Cache parameter values for comparisons
-    param_cache = {}
-    for param in model.parameters():
-        param_cache[param] = param.clone().detach()
+    # Make local parameter cache for comparisons
+    params = ParamTensorDict()
+    for x in model.parameters():
+        params[x] = x.clone().detach()
 
-    # Cache parameter values
-    sgd._refresh_param_cache()
+    # Refresh parameter cache with current values
+    sgd._refresh_params()
 
     # Modify parameter values
-    for param in model.parameters():
-        param.data = torch.randn_like(param)
+    for x in model.parameters():
+        x.data = torch.randn_like(x)
 
     # Restore parameter values
     sgd._restore_params()
 
     # Check for common parameters
-    err_str = "Parameter cache keys differ from expected"
-    assert param_cache.keys() == sgd._param_cache.keys(), err_str
+    err_str = "Parameter cache keys differ"
+    assert params.keys() == sgd._params.keys(), err_str
 
     # Check parameter values
     err_str = "Error in parameter values"
-    for param in model.parameters():
-        assert torch.equal(param_cache[param], sgd._param_cache[param]), err_str
+    for x in model.parameters():
+        assert torch.equal(params[x], sgd._params[x]), err_str
 
 
 def test_get_update(
@@ -109,17 +110,17 @@ def test_get_update(
 ) -> None:
     """Test `get_update()` behavior."""
     # Check for expected failure
-    for param in model.parameters():
+    for p in model.parameters():
         with pytest.raises(ValueError):
-            sgd.get_update(param)
+            sgd.get_update(p)
 
     # Compute gradients
     sgd.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
-    # Cache updates
-    sgd._refresh_update_cache()
+    # Refresh update cache with current values
+    sgd._refresh_updates()
 
     # Check for expected failure
     with pytest.raises(ValueError):
-        sgd.get_update(torch.randn(1))
+        sgd.get_update(nn.Parameter(torch.randn(1)))
