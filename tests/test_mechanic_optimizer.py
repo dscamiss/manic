@@ -11,46 +11,6 @@ from torch import Tensor, nn
 from src.satanic import MechanicOptimizer
 
 
-@pytest.fixture(name="dims")
-def fixture_dims() -> dict[str, int]:
-    """Dimensions."""
-    return {
-        "batch": 2,
-        "input": 3,
-        "output": 4,
-    }
-
-
-@pytest.fixture(name="model")
-def fixture_model(dims: dict[str, int]) -> nn.Module:
-    """Network model."""
-    return nn.Sequential(
-        nn.Linear(dims["input"], 16),
-        nn.ReLU(),
-        nn.Linear(16, 32),
-        nn.ReLU(),
-        nn.Linear(32, dims["output"]),
-    )
-
-
-@pytest.fixture(name="sgd")
-def fixture_sgd(model: nn.Module) -> MechanicOptimizer:
-    """Instance of `MechanicOptimizer` with vanilla SGD base optimizer class."""
-    return MechanicOptimizer(torch.optim.SGD(model.parameters()))
-
-
-@pytest.fixture(name="x")
-def fixture_x(dims: dict[str, int]) -> Float[Tensor, "..."]:
-    """Input tensor."""
-    return torch.randn(dims["batch"], dims["input"]).requires_grad_(False)
-
-
-@pytest.fixture(name="y")
-def fixture_y(dims: dict[str, int]) -> Float[Tensor, "..."]:
-    """Output tensor."""
-    return torch.randn(dims["batch"], dims["output"]).requires_grad_(False)
-
-
 def test_class_types(sgd: MechanicOptimizer) -> None:
     """Test `MechanicOptimizer` class types."""
     err_str = "Invalid class type"
