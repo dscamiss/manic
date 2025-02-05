@@ -56,10 +56,24 @@ def fixture_model(dims: dict[str, int]) -> nn.Module:
     )
 
 
-@pytest.fixture(name="sgd")
-def fixture_sgd(model: nn.Module) -> MechanicOptimizer:
-    """Instance of `MechanicOptimizer` with vanilla SGD base optimizer class."""
-    return MechanicOptimizer(torch.optim.SGD(model.parameters()))
+@pytest.fixture(name="sgd_store_delta")
+def fixture_sgd_store_delta(model: nn.Module) -> MechanicOptimizer:
+    """`MechanicOptimizer` with SGD base optimizer."""
+    base_optimizer = torch.optim.SGD(model.parameters())
+    return MechanicOptimizer(base_optimizer, store_delta=True)
+
+
+@pytest.fixture(name="sgd_compute_delta")
+def fixture_sgd_compute_delta(model: nn.Module) -> MechanicOptimizer:
+    """`MechanicOptimizer` with SGD base optimizer."""
+    base_optimizer = torch.optim.SGD(model.parameters())
+    return MechanicOptimizer(base_optimizer, store_delta=False)
+
+
+@pytest.fixture()
+def sgd(sgd_store_delta: MechanicOptimizer) -> MechanicOptimizer:
+    """Aliased text fixture for brevity."""
+    return sgd_store_delta
 
 
 @pytest.fixture(name="x")

@@ -117,7 +117,6 @@ class Mechanic(LRScheduler):
 
         This implements line 10 of Algorithm 1 in [1].
         """
-        # Make aliases for brevity
         optimizer = self._mechanic_optimizer
         params = self._mechanic_params
         state = self._mechanic_state
@@ -144,13 +143,12 @@ class Mechanic(LRScheduler):
 
         This implements lines 11 through 16 of Algorithm 1 in [1].
         """
-        # Make aliases for brevity
         params = self._mechanic_params
         state = self._mechanic_state
 
         # Compute current auxiliary states
         state.m = torch.max(params.beta * state.m, state.h)
-        state.v = params.beta_squared * state.v + state.h * state.h
+        state.v = params.beta_sq * state.v + state.h * state.h
         state.r = torch.clamp(params.beta * state.r - state.h * state.s, 0.0)
         state.W = (params.s_init / state.m.numel()) * state.m + state.r
 
@@ -161,7 +159,6 @@ class Mechanic(LRScheduler):
 
         This implements lines 10 through 16 of Algorithm 1 in [1].
         """
-        # Make aliases for brevity
         params = self._mechanic_params
         state = self._mechanic_state
 
@@ -187,11 +184,10 @@ class Mechanic(LRScheduler):
         self._compute_s_state()
         return torch.sum(self._mechanic_state.s).item()
 
+    # Pylint complains about omitting deprecated `epoch` argument
     @torch.no_grad()
     def step(self) -> None:  # pylint: disable=arguments-differ
         """Run one scheduler step."""
-        optimizer = self._mechanic_optimizer
-
         # Increment last epoch index (really, the batch index)
         self.last_epoch += 1
 
@@ -199,7 +195,7 @@ class Mechanic(LRScheduler):
         s_sum = self.get_lr()
 
         # Send it to the optimizer
-        optimizer.set_s_sum(s_sum)
+        self._mechanic_optimizer.set_s_sum(s_sum)
 
     def state_dict(self) -> dict[str, Any]:
         """Return scheduler state dict."""

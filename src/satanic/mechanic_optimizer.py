@@ -53,6 +53,16 @@ class MechanicOptimizer:
         self._updates = ParamTensorDict()
         self._updates_available = False
 
+        # Sanity check on base optimizer objective
+        for group in base_optimizer.param_groups:
+            if "maximize" in group and group["maximize"]:
+                raise ValueError("Maximization objective is not supported")
+
+        # Sanity check on `epsilon`
+        if epsilon <= 0.0:
+            raise ValueError("Epsilon must be positive")
+
+        # Initialize "delta" values and reference parameters
         for group in base_optimizer.param_groups:
             for x in group["params"]:
                 if self._store_delta:
@@ -106,7 +116,7 @@ class MechanicOptimizer:
                 self._params[x] = x.clone()
 
     @torch.no_grad()
-    def _refresh_updates(self) -> None:
+    def refresh_updates(self) -> None:
         """Refresh update cache with current values."""
         # Refresh parameter cache with current values
         self._refresh_params()
@@ -136,9 +146,11 @@ class MechanicOptimizer:
 
     @property
     def base_optimizer(self) -> Optimizer:
+        """Getter for `_base_optimizer`."""
         return self._base_optimizer
 
     def set_s_sum(self, s_sum: float) -> float:
+        """Set sum of components value."""
         self._s_sum_prev = self._s_sum
         self._s_sum = s_sum
 
@@ -168,8 +180,6 @@ class MechanicOptimizer:
         This implements line 17 of Algorithm 1 in [1].
         """
         for group in self.param_groups:
-            s_sum = self._s_sum
-            s_sum_prev = self._s_sum_prev
             for x in group["params"]:
                 x_ref = self._ref_params[x]
                 update = self._updates[x]
@@ -180,6 +190,6 @@ class MechanicOptimizer:
                 else:
                     # Add update to computed "delta" value
                     # - Note denominator uses data from previous iteration
-                    denom = s_sum_prev + self._epsilon
+                    denom = self._s_sum_prev + self._epsilon
                     new_delta = (x - x_ref).div_(denom).add_(update)
-                x.copy_(x_ref + s_sum * new_delta)
+                x.copy_(x_ref + self._s_sum * new_delta)
