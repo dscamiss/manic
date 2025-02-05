@@ -1,5 +1,6 @@
 # manic (WIP)
 
+![License](https://img.shields.io/badge/license-MIT-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?logo=PyTorch&logoColor=white)
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10-blue.svg)
