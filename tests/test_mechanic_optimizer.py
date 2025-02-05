@@ -9,8 +9,8 @@ from jaxtyping import Float, jaxtyped
 from torch import Tensor, nn
 from typeguard import typechecked as typechecker
 
-from src.satanic import MechanicOptimizer
-from src.satanic.types import ParamTensorDict
+from src.manic import MechanicOptimizer
+from src.manic.types import ParamTensorDict
 
 _SGD_OPTIMIZERS = ["sgd_store_delta", "sgd_compute_delta"]
 

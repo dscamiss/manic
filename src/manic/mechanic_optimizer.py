@@ -14,7 +14,7 @@ from jaxtyping import Float, jaxtyped
 from torch import Tensor, nn
 from typeguard import typechecked as typechecker
 
-from src.satanic.types import Optimizer, ParamTensorDict
+from src.manic.types import Optimizer, ParamTensorDict
 
 # flake8: noqa=DCO010
 # pylint: disable=too-few-public-methods

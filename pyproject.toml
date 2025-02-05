@@ -3,7 +3,7 @@ requires = ["setuptools >= 62.6"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "satanic"
+name = "manic"
 version = "0.0.1"
 description = "A PyTorch implementation of the Mechanic learning rate scheduler"
 dynamic = ["dependencies"]

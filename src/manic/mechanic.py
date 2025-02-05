@@ -16,7 +16,7 @@ from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
-from src.satanic.mechanic_optimizer import MechanicOptimizer
+from src.manic.mechanic_optimizer import MechanicOptimizer
 
 # flake8: noqa=DCO010
 # pylint: disable=invalid-name,not-callable

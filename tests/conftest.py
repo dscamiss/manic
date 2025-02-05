@@ -8,7 +8,7 @@ import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from src.satanic import MechanicOptimizer
+from src.manic import MechanicOptimizer
 
 
 def set_seed(seed: int) -> None:

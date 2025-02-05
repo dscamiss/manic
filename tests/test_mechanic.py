@@ -10,7 +10,7 @@ from torch import Tensor, nn
 from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
-from src.satanic import Mechanic, MechanicOptimizer, MechanicParams
+from src.manic import Mechanic, MechanicOptimizer, MechanicParams
 
 
 @pytest.fixture(name="mechanic_params")
