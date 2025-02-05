@@ -22,7 +22,6 @@ from src.manic.mechanic_optimizer import MechanicOptimizer
 # pylint: disable=invalid-name,not-callable
 
 _DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
-_DEFAULT_S_SUM = 0.0
 
 
 @dataclass
@@ -121,8 +120,8 @@ class Mechanic(LRScheduler):
         params = self._mechanic_params
         state = self._mechanic_state
 
-        # Compute current sum of components
-        s_sum = torch.sum(state.s)
+        # Get current sum of components
+        s_sum = optimizer.get_s_sum()
 
         # Compute current inner product state
         state.h.zero_()
@@ -175,12 +174,10 @@ class Mechanic(LRScheduler):
         Compute the current sum of components.
 
         This is (effectively) the learning rate used by `Mechanic`.
-
-        Calling this function should *not* change the learning rates
-        used by the base optimizer.
         """
         if self.last_epoch == 0:
-            return _DEFAULT_S_SUM
+            # No gradients available, return default value
+            return self._mechanic_optimizer.get_s_sum()
         self._compute_s_state()
         return torch.sum(self._mechanic_state.s).item()
 
@@ -188,7 +185,7 @@ class Mechanic(LRScheduler):
     @torch.no_grad()
     def step(self) -> None:  # pylint: disable=arguments-differ
         """Run one scheduler step."""
-        # Increment last epoch index (really, the batch index)
+        # Increment last epoch index (misnomer, this is the batch index)
         self.last_epoch += 1
 
         # Compute current sum of components

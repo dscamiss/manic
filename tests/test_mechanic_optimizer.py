@@ -110,16 +110,20 @@ def test_restore_params(model: nn.Module, sgd: MechanicOptimizer) -> None:
 
 
 @jaxtyped(typechecker=typechecker)
+@pytest.mark.parametrize("_sgd", _SGD_OPTIMIZERS)
 def test_delta(
-    model: nn.Module, sgd: MechanicOptimizer, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
+    request, model: nn.Module, _sgd: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
 ) -> None:
     """
     Test "delta" cache behavior.
 
     The following behavior is expected:
     - Initial "delta" values should be zeroes.
-    - After one optimizer step, "delta" values should be update values.
+    - After one optimizer step, "delta" values should equal the update values.
     """
+    # Get test fixture
+    sgd = request.getfixturevalue(_sgd)
+
     # Check "delta" values
     for p in model.parameters():
         delta = sgd.get_delta(p)
@@ -129,6 +133,10 @@ def test_delta(
     sgd.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
+    # Set sum of components value
+    # - Note: This test is not sensible when this value is zero
+    sgd.set_s_sum(1.0)
+
     # Run one optimizer step (this refreshes update cache)
     sgd.step()
 
@@ -136,7 +144,7 @@ def test_delta(
     for p in model.parameters():
         delta = sgd.get_delta(p)
         update = sgd.get_update(p)
-        assert torch.all(delta == update), "Error in delta values after step"
+        assert torch.allclose(delta, update), "Error in delta values after step"
 
 
 @jaxtyped(typechecker=typechecker)

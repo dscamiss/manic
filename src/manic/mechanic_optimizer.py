@@ -90,12 +90,13 @@ class MechanicOptimizer:
 
     @jaxtyped(typechecker=typechecker)
     @torch.no_grad()
-    def get_delta(self, x: nn.Parameter) -> Float[Tensor, "..."]:
+    def get_delta(self, x: nn.Parameter, inside_step: bool = False) -> Float[Tensor, "..."]:
         """
         Get current "delta" value for a particular parameter.
 
         Args:
             x: Parameter.
+            inside_step: Use sum of components value from previous iteration.
 
         Returns:
             The "delta" value for parameter `x`.
@@ -103,8 +104,9 @@ class MechanicOptimizer:
         if self._store_delta:
             delta = self._deltas[x]
         else:
-            x_ref = self.ref_params[x]
-            denom = self.s_sum + self.epsilon
+            s_sum = self._s_sum_prev if inside_step else self._s_sum
+            x_ref = self._ref_params[x]
+            denom = s_sum + self._epsilon
             delta = x.clone().sub_(x_ref).div_(denom)
         return delta
 
@@ -149,6 +151,10 @@ class MechanicOptimizer:
         """Getter for `_base_optimizer`."""
         return self._base_optimizer
 
+    def get_s_sum(self) -> float:
+        """Get sum of components value."""
+        return self._s_sum
+
     def set_s_sum(self, s_sum: float) -> float:
         """Set sum of components value."""
         self._s_sum_prev = self._s_sum
@@ -187,13 +193,12 @@ class MechanicOptimizer:
             for x in group["params"]:
                 x_ref = self._ref_params[x]
                 update = self._updates[x]
-                if self._store_delta:
-                    # Add update to stored "delta" value
-                    self._deltas[x].add_(update)
-                    new_delta = self._deltas[x]
-                else:
-                    # Add update to computed "delta" value
-                    # - Note denominator uses data from previous iteration
-                    denom = self._s_sum_prev + self._epsilon
-                    new_delta = (x - x_ref).div_(denom).add_(update)
+                # Add update to "delta" value
+                # - The second argument to `get_delta()` means we compute the
+                #   "delta" value using the sum of components value from the
+                #   previous iteration.  This is only meaningful if we do not
+                #   store "delta" values between iterations.
+                # - This is necessary because the scheduler `step()` is called
+                #   first, and modifies the current sum of components value.
+                new_delta = self.get_delta(x, True).add_(update)
                 x.copy_(x_ref + self._s_sum * new_delta)
