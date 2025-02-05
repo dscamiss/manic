@@ -8,7 +8,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import torch
 from jaxtyping import jaxtyped
@@ -207,24 +207,3 @@ class Mechanic(LRScheduler):
         Args:
             state_dict: State dict to load.
         """
-
-
-def main():
-    """Test Mechanic."""
-    model = torch.nn.Sequential(
-        torch.nn.Linear(2, 3),
-        torch.nn.ReLU(),
-        torch.nn.Linear(3, 1),
-        torch.nn.ReLU(),
-    )
-    optimizer = MechanicOptimizer(torch.optim.SGD(model.parameters()))
-    sgd = optimizer.base_optimizer
-    print(sgd.param_groups[0]["lr"])
-    for group in sgd.param_groups:
-        for param in group["params"]:
-            print(param)
-    mechanic = Mechanic(optimizer)
-
-
-if __name__ == "__main__":
-    main()

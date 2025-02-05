@@ -116,7 +116,7 @@ class MechanicOptimizer:
                 self._params[x] = x.clone()
 
     @torch.no_grad()
-    def refresh_updates(self) -> None:
+    def _refresh_updates(self) -> None:
         """Refresh update cache with current values."""
         # Refresh parameter cache with current values
         self._refresh_params()
@@ -179,6 +179,10 @@ class MechanicOptimizer:
 
         This implements line 17 of Algorithm 1 in [1].
         """
+        # Compute updates
+        self._refresh_updates()
+
+        # Adjust parameters
         for group in self.param_groups:
             for x in group["params"]:
                 x_ref = self._ref_params[x]

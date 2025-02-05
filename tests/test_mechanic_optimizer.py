@@ -47,7 +47,7 @@ def test_refresh_params(model: nn.Module, sgd: MechanicOptimizer) -> None:
 def test_refresh_updates(
     request, model: nn.Module, _sgd: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
 ) -> None:
-    """Test `refresh_updates()` behavior."""
+    """Test `_refresh_updates()` behavior."""
     # Get test fixture
     sgd = request.getfixturevalue(_sgd)
 
@@ -56,7 +56,7 @@ def test_refresh_updates(
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Refresh update cache with current values
-    sgd.refresh_updates()
+    sgd._refresh_updates()
 
     # Check updates
     err_str = "Error in updates"
@@ -67,14 +67,14 @@ def test_refresh_updates(
 
 
 def test_refresh_updates_side_effects(model: nn.Module, sgd: MechanicOptimizer) -> None:
-    """Test `refresh_updates()` for side effects."""
+    """Test `_refresh_updates()` for side effects."""
     # Make local parameter cache for comparisons
     params = ParamTensorDict()
     for x in model.parameters():
         params[x] = x.clone().detach()
 
     # Refresh update cache with current values
-    sgd.refresh_updates()
+    sgd._refresh_updates()
 
     # Check if parameter values were modified
     err_str = "Parameter values were modified"
@@ -129,10 +129,7 @@ def test_delta(
     sgd.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
-    # Refresh update cache with current values
-    sgd.refresh_updates()
-
-    # Run one optimizer step
+    # Run one optimizer step (this refreshes update cache)
     sgd.step()
 
     # Check "delta" values
@@ -157,7 +154,7 @@ def test_get_update(
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Refresh update cache with current values
-    sgd.refresh_updates()
+    sgd._refresh_updates()
 
     # Check for expected failure
     with pytest.raises(ValueError):
