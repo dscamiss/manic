@@ -17,7 +17,8 @@ The reference implementation, written by the authors of [1], can be found in [th
 
 # TODO
 
-- [ ] Add LR scheduler implementation
+- [x] Add LR scheduler implementation
+- [ ] Add LR scheduler state save/restore
 - [ ] Finish README
 - [ ] Add example(s)
 - [ ] Add comparison with reference implementation
