@@ -45,12 +45,12 @@ class MechanicOptimizer:
         self._base_optimizer = base_optimizer
         self._deltas = ParamTensorDict()
         self._epsilon = epsilon
-        self._params = ParamTensorDict()
-        self._ref_params = ParamTensorDict()
+        self._params: ParamTensorDict = ParamTensorDict()
+        self._ref_params: ParamTensorDict = ParamTensorDict()
         self._s_sum = 0.0
         self._s_sum_prev = 0.0
         self._store_delta = store_delta
-        self._updates = ParamTensorDict()
+        self._updates: ParamTensorDict = ParamTensorDict()
         self._updates_available = False
 
         # Sanity check on base optimizer objective
