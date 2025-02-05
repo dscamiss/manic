@@ -1,4 +1,4 @@
-# satanic (WIP)
+# manic (WIP)
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?logo=PyTorch&logoColor=white)
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg)
