@@ -70,8 +70,8 @@ def fixture_sgd_compute_delta(model: nn.Module) -> MechanicOptimizer:
     return MechanicOptimizer(base_optimizer, store_delta=False)
 
 
-@pytest.fixture()
-def sgd(sgd_store_delta: MechanicOptimizer) -> MechanicOptimizer:
+@pytest.fixture(name="sgd")
+def fixture_sgd(sgd_store_delta: MechanicOptimizer) -> MechanicOptimizer:
     """Aliased text fixture for brevity."""
     return sgd_store_delta
 
