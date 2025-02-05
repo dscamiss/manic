@@ -14,15 +14,20 @@ The reference implementation, written by the authors of [1], can be found in [th
 
 # Installation
 
+```
+git clone https://github.com/dscamiss/manic
+pip install manic
+```
+
 # Usage
 
 # TODO
 
 - [x] Add LR scheduler implementation
 - [ ] Add LR scheduler state save/restore
-- [ ] Finish README
 - [ ] Add example(s)
 - [ ] Add comparison with reference implementation
+- [ ] Wrap base LRScheduler in addition to base optimizer
 
 # References
 
