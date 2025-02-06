@@ -23,13 +23,17 @@ def fixture_mechanic_params() -> MechanicParams:
 
 
 @pytest.fixture(name="mechanic_store_delta")
-def fixture_mechanic_store_delta(sgd_store_delta: MechanicOptimizer, mechanic_params: MechanicParams) -> Mechanic:
+def fixture_mechanic_store_delta(
+    sgd_store_delta: MechanicOptimizer, mechanic_params: MechanicParams
+) -> Mechanic:
     """`Mechanic` learning rate scheduler."""
     return Mechanic(sgd_store_delta, -1, mechanic_params)
 
 
 @pytest.fixture(name="mechanic_compute_delta")
-def fixture_mechanic_compute_delta(sgd_compute_delta: MechanicOptimizer, mechanic_params: MechanicParams) -> Mechanic:
+def fixture_mechanic_compute_delta(
+    sgd_compute_delta: MechanicOptimizer, mechanic_params: MechanicParams
+) -> Mechanic:
     """`Mechanic` learning rate scheduler."""
     return Mechanic(sgd_compute_delta, -1, mechanic_params)
 
