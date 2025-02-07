@@ -8,7 +8,7 @@ import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from src.manic import MechanicOptimizer
+from src.manic.tuner import Tuner, TunerParams
 
 
 def set_seed(seed: int) -> None:
@@ -57,21 +57,23 @@ def fixture_model(dims: dict[str, int]) -> nn.Module:
 
 
 @pytest.fixture(name="sgd_store_delta")
-def fixture_sgd_store_delta(model: nn.Module) -> MechanicOptimizer:
-    """`MechanicOptimizer` with SGD base optimizer."""
+def fixture_sgd_store_delta(model: nn.Module) -> Tuner:
+    """`Tuner` with SGD base optimizer and static LR scheduler."""
     base_optimizer = torch.optim.SGD(model.parameters())
-    return MechanicOptimizer(base_optimizer, store_delta=True)
+    return Tuner(base_optimizer)
 
 
 @pytest.fixture(name="sgd_compute_delta")
-def fixture_sgd_compute_delta(model: nn.Module) -> MechanicOptimizer:
-    """`MechanicOptimizer` with SGD base optimizer."""
+def fixture_sgd_compute_delta(model: nn.Module) -> Tuner:
+    """`Tuner` with SGD base optimizer and static LR scheduler."""
     base_optimizer = torch.optim.SGD(model.parameters())
-    return MechanicOptimizer(base_optimizer, store_delta=False)
+    tuner_params = TunerParams()
+    tuner_params.store_delta = False
+    return Tuner(base_optimizer, None, tuner_params)
 
 
 @pytest.fixture(name="sgd")
-def fixture_sgd(sgd_store_delta: MechanicOptimizer) -> MechanicOptimizer:
+def fixture_sgd(sgd_store_delta: Tuner) -> Tuner:
     """Aliased text fixture for brevity."""
     return sgd_store_delta
 

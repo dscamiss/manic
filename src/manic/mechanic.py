@@ -16,12 +16,11 @@ from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
-from src.manic.mechanic_optimizer import MechanicOptimizer
+from src.manic.constants import EPSILON
+from src.manic.tuner import Tuner
 
 # flake8: noqa=DCO010
 # pylint: disable=invalid-name,not-callable
-
-_DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
 
 
 @dataclass
@@ -30,17 +29,16 @@ class MechanicParams:
     Dataclass for core `Mechanic` parameters.
 
     Correspondence with the parameters of Algorithm 1 in [1]:
-
         beta   : \beta (n-dimensional)
         decay  : \lambda (scalar)
         s_init : s_{init} (scalar)
         epsilon: \epsilon (scalar)
     """
 
-    beta: Tensor = _DEFAULT_BETA
+    beta: Tensor = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
     decay: float = 1e-2
     s_init: float = 1e-8
-    epsilon: float = 1e-8
+    epsilon: float = EPSILON
 
 
 @dataclass
@@ -70,7 +68,7 @@ class Mechanic(LRScheduler):
     Mechanic learning rate scheduler.
 
     Args:
-        mechanic_optimizer: Wrapped optimizer.
+        tuner: Wrapped optimizer and LR scheduler.
         last_epoch: Index of the last epoch (default = -1).
         mechanic_params: Core mechanic parameters.
     """
@@ -78,15 +76,17 @@ class Mechanic(LRScheduler):
     @torch.no_grad()
     def __init__(
         self,
-        mechanic_optimizer: MechanicOptimizer,
+        tuner: Tuner,
         last_epoch: int = -1,
         mechanic_params: MechanicParams = MechanicParams(),
     ) -> None:
-        self._mechanic_optimizer = mechanic_optimizer
+        self._tuner = tuner
         self._mechanic_params = mechanic_params
         self._mechanic_state = MechanicState()
+        self._last_lr = None
 
-        super().__init__(mechanic_optimizer.base_optimizer, last_epoch)
+        # Superclass constructor invokes `get_lr()` which needs `self._tuner`
+        super().__init__(tuner._base_optimizer, last_epoch)
 
         # Initialize internal state variables
         self._initialize_state()
@@ -112,22 +112,23 @@ class Mechanic(LRScheduler):
     @torch.no_grad()
     def _compute_inner_product_state(self) -> None:
         """
-        Compute the current inner product state.
+        Compute the inner product state `h`.
 
         This implements line 10 of Algorithm 1 in [1].
         """
-        optimizer = self._mechanic_optimizer
+        tuner = self._tuner
+        base_optimizer = tuner._base_optimizer
         params = self._mechanic_params
         state = self._mechanic_state
 
-        # Get current sum of components
-        s_sum = optimizer.get_s_sum()
+        # Get current sum of `s` components
+        s_sum = tuner.s_sum
 
         # Compute current inner product state
         state.h.zero_()
-        for group in optimizer.param_groups:
+        for group in base_optimizer.param_groups:
             for x in group["params"]:
-                delta_flat = optimizer.get_delta(x).flatten()
+                delta_flat = tuner.get_delta(x).flatten()
                 grad_flat = x.grad.flatten()
                 grad_norm = torch.norm(x.grad)
                 x_norm = torch.norm(x)
@@ -138,9 +139,9 @@ class Mechanic(LRScheduler):
     @torch.no_grad()
     def _compute_aux_states(self) -> None:
         """
-        Compute the current auxiliary states.
+        Compute the current auxiliary states `m`, `V`, `r`, and `W`.
 
-        This implements lines 11 through 16 of Algorithm 1 in [1].
+        This implements lines 11 through 15 of Algorithm 1 in [1].
         """
         params = self._mechanic_params
         state = self._mechanic_state
@@ -156,7 +157,7 @@ class Mechanic(LRScheduler):
         """
         Compute the current `s` state.
 
-        This implements lines 10 through 16 of Algorithm 1 in [1].
+        This implements line 10 through 16 of Algorithm 1 in [1].
         """
         params = self._mechanic_params
         state = self._mechanic_state
@@ -169,30 +170,40 @@ class Mechanic(LRScheduler):
         state.s = state.W / (torch.sqrt(state.v) + params.epsilon)
 
     @torch.no_grad()
-    def get_lr(self) -> float:
+    def get_lr(self) -> list[float]:
         """
-        Compute the current sum of components.
+        Compute the current sum of `s` components.
 
-        This is (effectively) the learning rate used by `Mechanic`.
+        This is the learning rate used by `Mechanic`.
+
+        The learning rate is replicated for each parameter group to maintain
+        consistency with the `LRScheduler` implementation.
         """
+        tuner = self._tuner
+        base_optimizer = tuner._base_optimizer
         if self.last_epoch == 0:
-            # No gradients available, return default value
-            return self._mechanic_optimizer.get_s_sum()
+            # No gradients available, just return default value
+            return [tuner.s_sum for _ in base_optimizer.param_groups]
         self._compute_s_state()
-        return torch.sum(self._mechanic_state.s).item()
+        s_sum = torch.sum(self._mechanic_state.s).item()
+        return [s_sum for _ in base_optimizer.param_groups]
 
     # Pylint complains about omitting deprecated `epoch` argument
     @torch.no_grad()
-    def step(self) -> None:  # pylint: disable=arguments-differ
+    def step(self) -> Any:  # pylint: disable=arguments-differ
         """Run one scheduler step."""
         # Increment last epoch index (misnomer, this is the batch index)
         self.last_epoch += 1
 
-        # Compute current sum of components
-        s_sum = self.get_lr()
+        # Compute current sum of `s` components
+        s_sum = self.get_lr()[0]
 
-        # Send it to the optimizer
-        self._mechanic_optimizer.set_s_sum(s_sum)
+        # Send it to the tuner
+        self._tuner.s_sum = s_sum
+
+        # Record last LR for consistency with the `LRScheduler` implementation
+        base_optimizer = self._tuner._base_optimizer
+        self._last_lr = [group["lr"] for group in base_optimizer.param_groups]
 
     def state_dict(self) -> dict[str, Any]:
         """Return scheduler state dict."""
