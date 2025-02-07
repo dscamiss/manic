@@ -86,7 +86,7 @@ class Mechanic(LRScheduler):
         self._last_lr = None
 
         # Superclass constructor invokes `get_lr()` which needs `self._tuner`
-        super().__init__(tuner._base_optimizer, last_epoch)
+        super().__init__(tuner.base_optimizer, last_epoch)
 
         # Initialize internal state variables
         self._initialize_state()
@@ -117,7 +117,7 @@ class Mechanic(LRScheduler):
         This implements line 10 of Algorithm 1 in [1].
         """
         tuner = self._tuner
-        base_optimizer = tuner._base_optimizer
+        base_optimizer = tuner.base_optimizer
         params = self._mechanic_params
         state = self._mechanic_state
 
@@ -180,10 +180,12 @@ class Mechanic(LRScheduler):
         consistency with the `LRScheduler` implementation.
         """
         tuner = self._tuner
-        base_optimizer = tuner._base_optimizer
+        base_optimizer = tuner.base_optimizer
+
+        # No gradients available on first call, so return default value
         if self.last_epoch == 0:
-            # No gradients available, just return default value
             return [tuner.s_sum for _ in base_optimizer.param_groups]
+
         self._compute_s_state()
         s_sum = torch.sum(self._mechanic_state.s).item()
         return [s_sum for _ in base_optimizer.param_groups]
@@ -202,7 +204,7 @@ class Mechanic(LRScheduler):
         self._tuner.s_sum = s_sum
 
         # Record last LR for consistency with the `LRScheduler` implementation
-        base_optimizer = self._tuner._base_optimizer
+        base_optimizer = self._tuner.base_optimizer
         self._last_lr = [group["lr"] for group in base_optimizer.param_groups]
 
     def state_dict(self) -> dict[str, Any]:

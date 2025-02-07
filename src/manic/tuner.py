@@ -130,6 +130,12 @@ class Tuner:
 
     @property
     @torch.no_grad()
+    def base_optimizer(self) -> Optimizer:
+        """Get base optimizer."""
+        return self._base_optimizer
+
+    @property
+    @torch.no_grad()
     def s_sum(self) -> float:
         """Get sum of `s` components value."""
         return self._tuner_state.s_sum

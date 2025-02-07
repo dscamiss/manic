@@ -65,7 +65,7 @@ def test_step_side_effects(
     The base optimizer's learning rates should not be modified.
     """
     tuner = mechanic._tuner
-    base_optimizer = tuner._base_optimizer
+    base_optimizer = tuner.base_optimizer
 
     # Get learning rate(s) from base optimizer
     base_lrs: dict[int, float] = {}
@@ -83,7 +83,7 @@ def test_step_side_effects(
     tuner.step()
 
     # Check learning rate(s) in base optimizer
-    for idx, group in enumerate(tuner._base_optimizer.param_groups):
+    for idx, group in enumerate(base_optimizer.param_groups):
         assert group["lr"] == base_lrs[idx]
 
 
@@ -98,7 +98,7 @@ def test_step(
 
     # Aliases for brevity
     tuner = mechanic._tuner
-    base_optimizer = tuner._base_optimizer
+    base_optimizer = tuner.base_optimizer
     params = mechanic._mechanic_params
     state = mechanic._mechanic_state
 

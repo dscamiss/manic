@@ -19,7 +19,7 @@ def test_class_types(sgd: Tuner) -> None:
     """Test `Tuner` class types."""
     err_str = "Invalid class type"
     assert isinstance(sgd, Tuner), err_str
-    assert isinstance(sgd._base_optimizer, torch.optim.SGD), err_str
+    assert isinstance(sgd.base_optimizer, torch.optim.SGD), err_str
 
 
 def test_refresh_model_params(model: nn.Module, sgd: Tuner) -> None:
@@ -55,7 +55,7 @@ def test_refresh_updates(
     sgd = request.getfixturevalue(_sgd)
 
     # Compute gradients
-    sgd._base_optimizer.zero_grad()
+    sgd.base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Refresh model parameter update values
@@ -135,7 +135,7 @@ def test_delta(
         assert torch.all(delta == 0.0), "Error in delta values"
 
     # Compute gradients
-    sgd._base_optimizer.zero_grad()
+    sgd.base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Set sum of components value
@@ -163,7 +163,7 @@ def test_get_update(
             sgd.get_update(p)
 
     # Compute gradients
-    sgd._base_optimizer.zero_grad()
+    sgd.base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Refresh model parameter update values
