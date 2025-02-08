@@ -35,9 +35,49 @@ pip install manic
 
 # Usage
 
+## Setup
+
+```python
+from manic import Mechanic, Updater
+
+# Make model, optimizer, LR scheduler as usual
+model = make_model()
+optimizer = torch.optim.AdamW(model.parameters(), ...)  # Your optimizer
+lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, ...)  # Your LR scheduler
+
+# Make Updater and Mechanic (both with default parameters)
+updater = Updater(optimizer, lr_scheduler)
+mechanic = Mechanic(updater)
+```
+
+## Training
+
+The paradigm is
+
+```python
+for x, y in dataloader:
+    <...>
+    loss.backward()
+    mechanic.step()
+    updater.step()   
+```
+
+Note that this is quite different from the standard paradigm
+
+```python title="Standard method"
+for epoch in range(num_epochs):
+    for x, y in dataloader:
+        <...>
+        loss.backward()
+        optimizer.step()
+    lr_scheduler.step()   
+```
+
+
 # TODO
 
 - [ ] Add state save/restore
+- [ ] Double-check OOO
 
 # References
 
