@@ -18,11 +18,12 @@ Mechanic works alongside an optimizer and learning rate scheduler to tune the le
 
 For concreteness, suppose that the optimizer is vanilla SGD, so that one gradient descent iteration is
 $\theta_{t+1} \leftarrow \theta_t - \alpha_t \nabla_\theta L(\theta_t)$, where $\alpha_t$ is the learning rate.  Generally
-speaking, the learning rate scheduler needs to be tuned to select the base learning rate.  This amounts to searching (by some
-process, usually *ad hoc*) for a scale factor $\sigma$ such that $\theta_{t+1} \leftarrow \theta_t - \sigma \alpha_t \nabla_\theta L(\theta_t)$ has good convergence properties.  
+speaking, the learning rate scheduler needs to be tuned to select the base learning rate.  This amounts to searching 
+for a scale factor $\sigma$ such that $\theta_{t+1} \leftarrow \theta_t - \sigma \alpha_t \nabla_\theta L(\theta_t)$ has good convergence 
+properties.  The search process is usually *ad hoc* and involves multiple training runs.
 
-Mechanic *automatically* selects the scale factor at each gradient descent iteration.  The selection
-process is entirely on-line, and comes with fairly strong theoretical guarantees with respect to convergence properties.
+In contrast, Mechanic automatically selects the scale factor at each gradient descent iteration.  The selection
+process is completely online during training, and comes with fairly strong theoretical guarantees with respect to convergence properties.
 The cost is computational overhead, which is not severe since Mechanic is a first-order method 
 (it only uses model parameters, gradients, and simple derived quantities).
 
@@ -40,19 +41,19 @@ pip install manic
 ```python
 from manic import Mechanic, Updater
 
-# Make model, optimizer, LR scheduler as usual
 model = make_model()
-optimizer = torch.optim.AdamW(model.parameters(), ...)  # Your optimizer
-lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, ...)  # Your LR scheduler
+optimizer = torch.optim.AdamW(model.parameters(), ...)
+lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, ...)
 
-# Make Updater and Mechanic (both with default parameters)
 updater = Updater(optimizer, lr_scheduler)
 mechanic = Mechanic(updater)
 ```
 
+There are no restrictions on the model, optimizer, or learning rate scheduler.
+
 ## Training
 
-The paradigm is
+The Mechanic paradigm is
 
 ```python
 for epoch in range(num_epochs):
@@ -74,6 +75,11 @@ for epoch in range(num_epochs):
     lr_scheduler.step()   
 ```
 
+# Example
+
+This figure shows the convergence of the (average) learning rate scale on a toy example:
+
+![Alt text](src/examples/fully_connected/figures/lr_scale_demo.png)
 
 # TODO
 
