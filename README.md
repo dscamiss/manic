@@ -16,7 +16,7 @@ The reference implementation can be found in [this repository](https://github.co
 
 Mechanic works alongside an optimizer and learning rate scheduler to tune the learning rate scale.
 
-To make this concrete, suppose that the optimizer is vanilla SGD, so that one gradient descent iteration is
+For concreteness, suppose that the optimizer is vanilla SGD, so that one gradient descent iteration is
 $\theta_{t+1} \leftarrow \theta_t - \alpha_t \nabla_\theta L(\theta_t)$, where $\alpha_t$ is the learning rate.  Generally
 speaking, the learning rate scheduler needs to be tuned to select the base learning rate.  This amounts to searching (by some
 process, usually *ad hoc*) for a scale factor $\sigma$ such that $\theta_{t+1} \leftarrow \theta_t - \sigma \alpha_t \nabla_\theta L(\theta_t)$ has good convergence properties.  
