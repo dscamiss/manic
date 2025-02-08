@@ -1,5 +1,5 @@
 """
-Mechanic learning rate scheduler.
+Mechanic learning rate scale tuner.
 
 References:
 
@@ -17,7 +17,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
 from src.manic.constants import EPSILON
-from src.manic.tuner import Tuner
+from src.manic.updater import Updater
 
 # flake8: noqa=DCO010
 # pylint: disable=invalid-name,not-callable
@@ -65,10 +65,10 @@ class MechanicState:
 
 class Mechanic(LRScheduler):
     """
-    Mechanic learning rate scheduler.
+    Mechanic learning rate scale tuner.
 
     Args:
-        tuner: Wrapped optimizer and LR scheduler.
+        updater: Wrapped optimizer and LR scheduler.
         last_epoch: Index of the last epoch (default = -1).
         mechanic_params: Core mechanic parameters.
     """
@@ -76,17 +76,17 @@ class Mechanic(LRScheduler):
     @torch.no_grad()
     def __init__(
         self,
-        tuner: Tuner,
+        updater: Updater,
         last_epoch: int = -1,
         mechanic_params: MechanicParams = MechanicParams(),
     ) -> None:
-        self._tuner = tuner
+        self._updater = updater
         self._mechanic_params = mechanic_params
         self._mechanic_state = MechanicState()
         self._last_lr = None
 
-        # Superclass constructor invokes `get_lr()` which needs `self._tuner`
-        super().__init__(tuner.base_optimizer, last_epoch)
+        # Constructor is here since initial `get_lr()` needs `self._updater`
+        super().__init__(updater.base_optimizer, last_epoch)
 
         # Initialize internal state variables
         self._initialize_state()
@@ -116,19 +116,19 @@ class Mechanic(LRScheduler):
 
         This implements line 10 of Algorithm 1 in [1].
         """
-        tuner = self._tuner
-        base_optimizer = tuner.base_optimizer
+        updater = self._updater
+        base_optimizer = updater.base_optimizer
         params = self._mechanic_params
         state = self._mechanic_state
 
         # Get current sum of `s` components
-        s_sum = tuner.s_sum
+        s_sum = updater.s_sum
 
         # Compute current inner product state
         state.h.zero_()
         for group in base_optimizer.param_groups:
             for x in group["params"]:
-                delta_flat = tuner.get_delta(x).flatten()
+                delta_flat = updater.get_delta(x).flatten()
                 grad_flat = x.grad.flatten()
                 grad_norm = torch.norm(x.grad)
                 x_norm = torch.norm(x)
@@ -174,45 +174,46 @@ class Mechanic(LRScheduler):
         """
         Compute the current sum of `s` components.
 
-        This is the learning rate used by `Mechanic`.
+        This is the learning rate scale used by `Mechanic`.
 
-        The learning rate is replicated for each parameter group to maintain
-        consistency with the `LRScheduler` implementation.
+        The learning rate scale is replicated for each parameter group to
+        maintain consistency with the `LRScheduler` implementation.
         """
-        tuner = self._tuner
-        base_optimizer = tuner.base_optimizer
+        updater = self._updater
+        base_optimizer = updater.base_optimizer
 
         # No gradients available on first call, so return default value
         if self.last_epoch == 0:
-            return [tuner.s_sum for _ in base_optimizer.param_groups]
+            return [updater.s_sum for _ in base_optimizer.param_groups]
 
         self._compute_s_state()
         s_sum = torch.sum(self._mechanic_state.s).item()
         return [s_sum for _ in base_optimizer.param_groups]
 
-    # Pylint complains about omitting deprecated `epoch` argument
+    # Note: Pylint complains about omitting deprecated `epoch` argument
     @torch.no_grad()
     def step(self) -> Any:  # pylint: disable=arguments-differ
-        """Run one scheduler step."""
-        # Increment last epoch index (misnomer, this is the batch index)
+        """Run one Mechanic step."""
+        # Increment last epoch index
+        # - This is a misnomer, since for Mechanic this is the batch index
         self.last_epoch += 1
 
         # Compute current sum of `s` components
         s_sum = self.get_lr()[0]
 
-        # Send it to the tuner
-        self._tuner.s_sum = s_sum
+        # Send it to the updater
+        self._updater.s_sum = s_sum
 
         # Record last LR for consistency with the `LRScheduler` implementation
-        base_optimizer = self._tuner.base_optimizer
+        base_optimizer = self._updater.base_optimizer
         self._last_lr = [s_sum for group in base_optimizer.param_groups]
 
     def state_dict(self) -> dict[str, Any]:
-        """Return scheduler state dict."""
+        """Return Mechanic state dict."""
 
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         """
-        Load scheduler state dict.
+        Load Mechanic state dict.
 
         Args:
             state_dict: State dict to load.

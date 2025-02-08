@@ -8,7 +8,7 @@
 ![Build](https://github.com/dscamiss/manic/actions/workflows/python-package.yml/badge.svg)
 [![codecov](https://codecov.io/gh/dscamiss/manic/graph/badge.svg?token=ZWTBITN49T)](https://codecov.io/gh/dscamiss/manic)
 
-An alternative PyTorch implementation of the Mechanic learning scheduler [1].
+An alternative PyTorch implementation of the Mechanic learning rate scale tuner [1].
 
 The reference implementation, written by the authors of [1], can be found in [this repository](https://github.com/optimizedlearning/mechanic).
 

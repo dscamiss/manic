@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
 from src.manic.mechanic import Mechanic, MechanicParams
-from src.manic.tuner import Tuner
+from src.manic.updater import Updater
 from src.manic.types import ParamTensorDict
 
 _MECHANIC_LR_SCHEDULERS = ["mechanic_store_delta", "mechanic_compute_delta"]
@@ -25,7 +25,7 @@ def fixture_mechanic_params() -> MechanicParams:
 
 @pytest.fixture(name="mechanic_store_delta")
 def fixture_mechanic_store_delta(
-    sgd_store_delta: Tuner, mechanic_params: MechanicParams
+    sgd_store_delta: Updater, mechanic_params: MechanicParams
 ) -> Mechanic:
     """`Mechanic` learning rate scheduler."""
     return Mechanic(sgd_store_delta, -1, mechanic_params)
@@ -33,7 +33,7 @@ def fixture_mechanic_store_delta(
 
 @pytest.fixture(name="mechanic_compute_delta")
 def fixture_mechanic_compute_delta(
-    sgd_compute_delta: Tuner, mechanic_params: MechanicParams
+    sgd_compute_delta: Updater, mechanic_params: MechanicParams
 ) -> Mechanic:
     """`Mechanic` learning rate scheduler."""
     return Mechanic(sgd_compute_delta, -1, mechanic_params)
@@ -64,8 +64,8 @@ def test_step_side_effects(
 
     The base optimizer's learning rates should not be modified.
     """
-    tuner = mechanic._tuner
-    base_optimizer = tuner.base_optimizer
+    updater = mechanic._updater
+    base_optimizer = updater.base_optimizer
 
     # Get learning rate(s) from base optimizer
     base_lrs: dict[int, float] = {}
@@ -76,11 +76,11 @@ def test_step_side_effects(
     base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
-    # Run one scheduler step
+    # Run one Mechanic step
     mechanic.step()
 
-    # Run one tuner step
-    tuner.step()
+    # Run one updater step
+    updater.step()
 
     # Check learning rate(s) in base optimizer
     for idx, group in enumerate(base_optimizer.param_groups):
@@ -97,8 +97,8 @@ def test_step(
     mechanic = request.getfixturevalue(_mechanic)
 
     # Aliases for brevity
-    tuner = mechanic._tuner
-    base_optimizer = tuner.base_optimizer
+    updater = mechanic._updater
+    base_optimizer = updater.base_optimizer
     params = mechanic._mechanic_params
     state = mechanic._mechanic_state
 
@@ -113,7 +113,7 @@ def test_step(
     base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
-    # Run one scheduler step
+    # Run one Mechanic step
     mechanic.step()
 
     # Check scheduler internal state
@@ -125,8 +125,8 @@ def test_step(
     assert torch.all(state.W == 0.0), err_str + "W"
     assert torch.all(state.s == 0.0), err_str + "s"
 
-    # Run one tuner step
-    tuner.step()
+    # Run one updater step
+    updater.step()
 
     # Check parameter values
     for p in model.parameters():
@@ -139,7 +139,7 @@ def test_step(
     base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
-    # Run one scheduler step
+    # Run one Mechanic step
     mechanic.step()
 
     # Check scheduler internal state
@@ -149,7 +149,7 @@ def test_step(
 
     h_expected = torch.as_tensor(0.0)
     for p in model.parameters():
-        delta_flat = tuner.get_delta(p).flatten()
+        delta_flat = updater.get_delta(p).flatten()
         grad_flat = p.grad.flatten()
         h_expected.add_(torch.inner(delta_flat, grad_flat))
 
@@ -168,8 +168,8 @@ def test_step(
     assert torch.all(state.W == W_expected), err_str + "W"
     assert torch.all(state.s == s_expected), err_str + "s"
 
-    # Run one tuner step
-    tuner.step()
+    # Run one updater step
+    updater.step()
 
     # Check parameter values
     for p in model.parameters():

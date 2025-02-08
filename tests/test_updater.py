@@ -1,4 +1,4 @@
-"""Test code for `Tuner` class."""
+"""Test code for Updater class."""
 
 # flake8: noqa=D401
 # pylint: disable=protected-access
@@ -9,23 +9,23 @@ from jaxtyping import Float, jaxtyped
 from torch import Tensor, nn
 from typeguard import typechecked as typechecker
 
-from src.manic import Tuner
+from src.manic.updater import Updater
 from src.manic.types import ParamTensorDict
 
-_SGD_TUNERS = ["sgd_store_delta", "sgd_compute_delta"]
+_SGD_UPDATERS = ["sgd_store_delta", "sgd_compute_delta"]
 
 
-def test_class_types(sgd: Tuner) -> None:
-    """Test `Tuner` class types."""
+def test_class_types(sgd: Updater) -> None:
+    """Test `Updater` class types."""
     err_str = "Invalid class type"
-    assert isinstance(sgd, Tuner), err_str
+    assert isinstance(sgd, Updater), err_str
     assert isinstance(sgd.base_optimizer, torch.optim.SGD), err_str
 
 
-def test_refresh_model_params(model: nn.Module, sgd: Tuner) -> None:
+def test_refresh_model_params(model: nn.Module, sgd: Updater) -> None:
     """Test `_refresh_model_params()` behavior."""
     # Make alias for brevity
-    state = sgd._tuner_state
+    state = sgd._updater_state
 
     # Record model parameter values for comparisons
     model_params = ParamTensorDict()
@@ -46,7 +46,7 @@ def test_refresh_model_params(model: nn.Module, sgd: Tuner) -> None:
 
 
 @jaxtyped(typechecker=typechecker)
-@pytest.mark.parametrize("_sgd", _SGD_TUNERS)
+@pytest.mark.parametrize("_sgd", _SGD_UPDATERS)
 def test_refresh_updates(
     request, model: nn.Module, _sgd: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
 ) -> None:
@@ -69,7 +69,7 @@ def test_refresh_updates(
         update = sgd.get_update(p)
         assert torch.allclose(update, -1.0 * lr * p.grad), err_str
 
-def test_refresh_updates_side_effects(model: nn.Module, sgd: Tuner) -> None:
+def test_refresh_updates_side_effects(model: nn.Module, sgd: Updater) -> None:
     """Test `_refresh_updates()` for side effects."""
     # Record model parameter values for comparisons
     model_params = ParamTensorDict()
@@ -85,10 +85,10 @@ def test_refresh_updates_side_effects(model: nn.Module, sgd: Tuner) -> None:
         assert torch.all(x == model_params[x]), err_str
 
 
-def test_restore_params(model: nn.Module, sgd: Tuner) -> None:
+def test_restore_params(model: nn.Module, sgd: Updater) -> None:
     """Test `_restore_params()` behavior."""
     # Make alias for brevity
-    state = sgd._tuner_state
+    state = sgd._updater_state
 
     # Record model parameter values for comparisons
     model_params = ParamTensorDict()
@@ -116,7 +116,7 @@ def test_restore_params(model: nn.Module, sgd: Tuner) -> None:
 
 
 @jaxtyped(typechecker=typechecker)
-@pytest.mark.parametrize("_sgd", _SGD_TUNERS)
+@pytest.mark.parametrize("_sgd", _SGD_UPDATERS)
 def test_delta(
     request, model: nn.Module, _sgd: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
 ) -> None:
@@ -156,7 +156,7 @@ def test_delta(
 
 @jaxtyped(typechecker=typechecker)
 def test_get_update(
-    model: nn.Module, sgd: Tuner, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
+    model: nn.Module, sgd: Updater, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
 ) -> None:
     """Test `get_update()` behavior."""
     # Check for expected failure

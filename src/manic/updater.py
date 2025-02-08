@@ -1,5 +1,5 @@
 """
-Wrapped optimizer and LR scheduler for use by `Mechanic`.
+Updater: A wrapped optimizer and LR scheduler for use by `Mechanic`.
 
 References:
 
@@ -43,9 +43,9 @@ class _StaticLRScheduler(LRScheduler):
 
 
 @dataclass
-class TunerParams:
+class UpdaterParams:
     """
-    Dataclass for `Tuner` parameters.
+    Dataclass for `Updater` parameters.
 
     Args:
         epsilon: Small value for numerical stability (default = `EPSILON`).
@@ -57,9 +57,9 @@ class TunerParams:
 
 
 @dataclass
-class TunerState:
+class UpdaterState:
     r"""
-    Dataclass for `Tuner` state variables.
+    Dataclass for `Updater` state variables.
 
     Args:
         model_params: Model parameter values.
@@ -87,17 +87,27 @@ class TunerState:
     s_sum_prev: float = 0.0
 
 
-class Tuner:
+class Updater:
     r"""
-    Wrapped optimizer and LR scheduler for use by `Mechanic`.
+    A wrapped optimizer and LR scheduler for use by `Mechanic`.
 
     Args:
         base_optimizer: Instance of base optimizer.
         base_lr_scheduler: Instance of base LR scheduler.
-        tuner_params: `Tuner` parameters.
+        updater_params: `Updater` parameters.
 
     Raises:
         ValueError: If any arguments are invalid.
+
+    Note:
+        In principle, this class could be extended to any optimization process
+        that updates model parameters, not just one that uses the standard
+        "optimizer step and LR scheduler step" paradigm.  To do so, we would
+        need to refactor `Mechanic` since it is currently implemented as an
+        `LRScheduler` whose associated optimizer is the base optimizer.
+
+        This extension is probably unnecessary since the "optimizer step and
+        LR scheduler step" paradigm is enough to cover all normal use cases.
     """
 
     @torch.no_grad()
@@ -105,7 +115,7 @@ class Tuner:
         self,
         base_optimizer: Optimizer,
         base_lr_scheduler: Optional[LRScheduler] = None,
-        tuner_params: TunerParams = TunerParams(),
+        updater_params: UpdaterParams = UpdaterParams(),
     ) -> None:
         # Default to static LR scheduler
         if base_lr_scheduler is None:
@@ -118,15 +128,15 @@ class Tuner:
 
         self._base_optimizer = base_optimizer
         self._base_lr_scheduler = base_lr_scheduler
-        self._tuner_params = tuner_params
-        self._tuner_state = TunerState()
+        self._updater_params = updater_params
+        self._updater_state = UpdaterState()
 
         # Initialize reference model parameter values and "delta" values
         for group in self._base_optimizer.param_groups:
             for x in group["params"]:
-                self._tuner_state.ref_model_params[x] = x.clone()
-                if self._tuner_params.store_delta:
-                    self._tuner_state.deltas[x] = torch.zeros_like(x)
+                self._updater_state.ref_model_params[x] = x.clone()
+                if self._updater_params.store_delta:
+                    self._updater_state.deltas[x] = torch.zeros_like(x)
 
     @property
     @torch.no_grad()
@@ -138,13 +148,13 @@ class Tuner:
     @torch.no_grad()
     def s_sum(self) -> float:
         """Get sum of `s` components value."""
-        return self._tuner_state.s_sum
+        return self._updater_state.s_sum
 
     @s_sum.setter
     @torch.no_grad()
     def s_sum(self, s_sum: float) -> None:
         """Set sum of `s` components value."""
-        state = self._tuner_state
+        state = self._updater_state
         state.s_sum_prev = state.s_sum
         state.s_sum = s_sum
 
@@ -162,8 +172,8 @@ class Tuner:
         Returns:
             The "delta" value for model parameter `x`.
         """
-        state = self._tuner_state
-        params = self._tuner_params
+        state = self._updater_state
+        params = self._updater_params
 
         if params.store_delta:
             return state.deltas[x]
@@ -181,7 +191,7 @@ class Tuner:
         """Refresh model parameter values."""
         for group in self._base_optimizer.param_groups:
             for x in group["params"]:
-                self._tuner_state.model_params[x] = x.clone()
+                self._updater_state.model_params[x] = x.clone()
 
     @torch.no_grad()
     def _refresh_updates(self) -> None:
@@ -192,14 +202,11 @@ class Tuner:
         # Run base optimizer step plus base LR scheduler step
         # - Calling the optimizer step before the LR scheduler step is the
         #   expected order of operations for PyTorch >= 1.1.0.
-        # - In principle, this could be abstracted to any optimization process
-        #   that updates model parameters, not just those that fit into the
-        #   "base optimizer step and LR scheduler step" paradigm.
         self._base_optimizer.step()
         self._base_lr_scheduler.step()
 
         # Derive model parameter update values
-        state = self._tuner_state
+        state = self._updater_state
         for group in self._base_optimizer.param_groups:
             for x in group["params"]:
                 x_prev = state.model_params[x]
@@ -213,7 +220,7 @@ class Tuner:
         """Restore model parameter values."""
         for group in self._base_optimizer.param_groups:
             for x in group["params"]:
-                x.copy_(self._tuner_state.model_params[x])
+                x.copy_(self._updater_state.model_params[x])
 
     @jaxtyped(typechecker=typechecker)
     def get_update(self, x: nn.Parameter) -> Float[Tensor, "..."]:
@@ -229,14 +236,14 @@ class Tuner:
         Raises:
             ValueError: If the update is not available.
         """
-        if x not in self._tuner_state.updates:
+        if x not in self._updater_state.updates:
             raise ValueError("Update is not available.")
-        return self._tuner_state.updates[x]
+        return self._updater_state.updates[x]
 
     @torch.no_grad()
     def step(self) -> None:
         """
-        Run a single model parameter update step.
+        Run one updater step.
 
         This implements line 17 of Algorithm 1 in [1].
         """
@@ -244,7 +251,7 @@ class Tuner:
         self._refresh_updates()
 
         # Adjust model parameters
-        state = self._tuner_state
+        state = self._updater_state
         for group in self._base_optimizer.param_groups:
             for x in group["params"]:
                 x_ref = state.ref_model_params[x]

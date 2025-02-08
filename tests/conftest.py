@@ -8,7 +8,9 @@ import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from src.manic.tuner import Tuner, TunerParams
+from src.manic.updater import Updater, UpdaterParams
+
+# flake8: noqa=D401
 
 
 def set_seed(seed: int) -> None:
@@ -57,23 +59,23 @@ def fixture_model(dims: dict[str, int]) -> nn.Module:
 
 
 @pytest.fixture(name="sgd_store_delta")
-def fixture_sgd_store_delta(model: nn.Module) -> Tuner:
-    """`Tuner` with SGD base optimizer and static LR scheduler."""
+def fixture_sgd_store_delta(model: nn.Module) -> Updater:
+    """`Updater` with SGD base optimizer and static LR scheduler."""
     base_optimizer = torch.optim.SGD(model.parameters())
-    return Tuner(base_optimizer)
+    return Updater(base_optimizer)
 
 
 @pytest.fixture(name="sgd_compute_delta")
-def fixture_sgd_compute_delta(model: nn.Module) -> Tuner:
-    """`Tuner` with SGD base optimizer and static LR scheduler."""
+def fixture_sgd_compute_delta(model: nn.Module) -> Updater:
+    """`Updater` with SGD base optimizer and static LR scheduler."""
     base_optimizer = torch.optim.SGD(model.parameters())
-    tuner_params = TunerParams()
-    tuner_params.store_delta = False
-    return Tuner(base_optimizer, None, tuner_params)
+    updater_params = UpdaterParams()
+    updater_params.store_delta = False
+    return Updater(base_optimizer, None, updater_params)
 
 
 @pytest.fixture(name="sgd")
-def fixture_sgd(sgd_store_delta: Tuner) -> Tuner:
+def fixture_sgd(sgd_store_delta: Updater) -> Updater:
     """Aliased text fixture for brevity."""
     return sgd_store_delta
 
