@@ -81,6 +81,8 @@ This figure shows the convergence of the (average) learning rate scale on a toy 
 
 ![Alt text](src/examples/fully_connected/figures/lr_scale_demo.png)
 
+The learning rate scale dynamics show the "overshoot then settle" behavior observed in [1].
+
 # TODO
 
 - [ ] Add state save/restore
