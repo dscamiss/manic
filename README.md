@@ -45,7 +45,7 @@ model = make_model()
 optimizer = torch.optim.AdamW(model.parameters(), ...)
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, ...)
 
-updater = Updater(optimizer, lr_scheduler)
+updater = Updater(optimizer, lr_scheduler)  # Uses static LR schedule if `lr_scheduler` is omitted
 mechanic = Mechanic(updater)
 ```
 
