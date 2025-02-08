@@ -55,11 +55,12 @@ mechanic = Mechanic(updater)
 The paradigm is
 
 ```python
-for x, y in dataloader:
-    <...>
-    loss.backward()
-    mechanic.step()
-    updater.step()   
+for epoch in range(num_epochs):
+    for x, y in dataloader:
+        <...>
+        loss.backward()
+        mechanic.step()
+        updater.step()   
 ```
 
 Note that this is quite different from the standard paradigm
