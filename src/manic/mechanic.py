@@ -205,7 +205,7 @@ class Mechanic(LRScheduler):
 
         # Record last LR for consistency with the `LRScheduler` implementation
         base_optimizer = self._tuner.base_optimizer
-        self._last_lr = [group["lr"] for group in base_optimizer.param_groups]
+        self._last_lr = [s_sum for group in base_optimizer.param_groups]
 
     def state_dict(self) -> dict[str, Any]:
         """Return scheduler state dict."""

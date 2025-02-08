@@ -53,9 +53,10 @@ def test_refresh_updates(
     """Test `_refresh_updates()` behavior."""
     # Get test fixture
     sgd = request.getfixturevalue(_sgd)
+    base_optimizer = sgd.base_optimizer
 
     # Compute gradients
-    sgd.base_optimizer.zero_grad()
+    base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Refresh model parameter update values
@@ -63,10 +64,10 @@ def test_refresh_updates(
 
     # Check update values
     err_str = "Error in update values"
+    lr = base_optimizer.param_groups[0]["lr"]
     for p in model.parameters():
         update = sgd.get_update(p)
-        assert torch.allclose(update, p.grad), err_str
-
+        assert torch.allclose(update, -1.0 * lr * p.grad), err_str
 
 def test_refresh_updates_side_effects(model: nn.Module, sgd: Tuner) -> None:
     """Test `_refresh_updates()` for side effects."""
@@ -128,6 +129,7 @@ def test_delta(
     """
     # Get test fixture
     sgd = request.getfixturevalue(_sgd)
+    base_optimizer = sgd.base_optimizer
 
     # Check "delta" values
     for p in model.parameters():
@@ -135,7 +137,7 @@ def test_delta(
         assert torch.all(delta == 0.0), "Error in delta values"
 
     # Compute gradients
-    sgd.base_optimizer.zero_grad()
+    base_optimizer.zero_grad()
     torch.nn.MSELoss()(model(x), y).backward()
 
     # Set sum of components value

@@ -201,11 +201,9 @@ class Tuner:
         # Derive model parameter update values
         state = self._tuner_state
         for group in self._base_optimizer.param_groups:
-            denom = -1.0 * group["lr"]
             for x in group["params"]:
                 x_prev = state.model_params[x]
                 state.updates[x] = x.clone().sub_(x_prev)
-                state.updates[x].div_(denom)
 
         # Restore previous model parameters
         self._restore_model_params()
