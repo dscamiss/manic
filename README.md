@@ -53,23 +53,23 @@ There are no restrictions on the model, optimizer, or learning rate scheduler.
 
 ## Training
 
-The Mechanic paradigm is
+The `manic` paradigm is
 
 ```python
 for epoch in range(num_epochs):
     for x, y in dataloader:
-        <...>
+        [...]
         loss.backward()
         mechanic.step()
         updater.step()   
 ```
 
-Note that this is quite different from the standard paradigm
+Note that this is different from the standard paradigm
 
 ```python title="Standard method"
 for epoch in range(num_epochs):
     for x, y in dataloader:
-        <...>
+        [...]
         loss.backward()
         optimizer.step()
     lr_scheduler.step()   
@@ -77,7 +77,20 @@ for epoch in range(num_epochs):
 
 ## Save/load state
 
-TODO
+Save state:
+
+```python
+updater_state = updater.state_dict()
+mechanic_state = mechanic.state_dict()
+```
+
+Load state:
+
+```python
+updater.load_state_dict(updater_state)
+mechanic.load_state_dict(mechanic_state)
+mechanic.optimizer = updater.base_optimizer
+```
 
 # Example
 
