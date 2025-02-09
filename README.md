@@ -87,6 +87,12 @@ mechanic_state = mechanic.state_dict()
 Load state:
 
 ```python
+# Make optimizer and LR scheduler as above
+optimizer = <your-optimizer>
+lr_scheduler = <your-LR-scheduler>
+updater = Updater(optimizer, lr_scheduler)
+mechanic = Mechanic(updater)
+
 updater.load_state_dict(updater_state)
 mechanic.load_state_dict(mechanic_state)
 mechanic.optimizer = updater.base_optimizer
