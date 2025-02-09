@@ -93,6 +93,7 @@ lr_scheduler = <your-LR-scheduler>
 updater = Updater(optimizer, lr_scheduler)
 mechanic = Mechanic(updater)
 
+# Load saved state dicts
 updater.load_state_dict(updater_state)
 mechanic.load_state_dict(mechanic_state)
 mechanic.optimizer = updater.base_optimizer
