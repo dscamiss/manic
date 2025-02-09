@@ -34,7 +34,7 @@ class _StaticLRScheduler(LRScheduler):
         last_epoch: Index of last epoch (default = -1).
     """
 
-    def __init__(self, optimizer, last_epoch=-1) -> None:
+    def __init__(self, optimizer: Optimizer, last_epoch=-1) -> None:
         super().__init__(optimizer, last_epoch)
 
     def get_lr(self) -> list[float]:
