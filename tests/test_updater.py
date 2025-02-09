@@ -6,6 +6,7 @@
 import pytest
 import torch
 from jaxtyping import Float, jaxtyped
+from pytest import FixtureRequest
 from torch import Tensor, nn
 from typeguard import typechecked as typechecker
 
@@ -48,7 +49,11 @@ def test_refresh_model_params(model: nn.Module, sgd: Updater) -> None:
 @jaxtyped(typechecker=typechecker)
 @pytest.mark.parametrize("_sgd", _SGD_UPDATERS)
 def test_refresh_updates(
-    request, model: nn.Module, _sgd: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
+    request: FixtureRequest,
+    model: nn.Module,
+    _sgd: str,
+    x: Float[Tensor, "..."],
+    y: Float[Tensor, "..."],
 ) -> None:
     """Test `_refresh_updates()` behavior."""
     # Get test fixture
@@ -119,7 +124,11 @@ def test_restore_params(model: nn.Module, sgd: Updater) -> None:
 @jaxtyped(typechecker=typechecker)
 @pytest.mark.parametrize("_sgd", _SGD_UPDATERS)
 def test_delta(
-    request, model: nn.Module, _sgd: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
+    request: FixtureRequest,
+    model: nn.Module,
+    _sgd: str,
+    x: Float[Tensor, "..."],
+    y: Float[Tensor, "..."],
 ) -> None:
     """
     Test `get_delta()` behavior.

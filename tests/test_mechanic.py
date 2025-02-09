@@ -6,6 +6,7 @@
 import pytest
 import torch
 from jaxtyping import Float, jaxtyped
+from pytest import FixtureRequest
 from torch import Tensor, nn
 from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
@@ -92,7 +93,11 @@ def test_step_side_effects(
 @jaxtyped(typechecker=typechecker)
 @pytest.mark.parametrize("_mechanic", _MECHANIC_LR_SCHEDULERS)
 def test_step(
-    request, model: nn.Module, _mechanic: str, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
+    request: FixtureRequest,
+    model: nn.Module,
+    _mechanic: str,
+    x: Float[Tensor, "..."],
+    y: Float[Tensor, "..."],
 ) -> None:
     """Test `step()` behavior over two iterations."""
     # Get test fixture
@@ -152,6 +157,7 @@ def test_step(
     h_expected = torch.as_tensor(0.0)
     for p in model.parameters():
         delta_flat = updater.get_delta(p).flatten()
+        assert p.grad is not None, "Missing gradient"  # Fixes mypy error
         grad_flat = p.grad.flatten()
         h_expected.add_(torch.inner(delta_flat, grad_flat))
 
