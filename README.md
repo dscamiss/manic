@@ -45,7 +45,7 @@ model = make_model()
 optimizer = torch.optim.AdamW(model.parameters(), ...)
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, ...)
 
-updater = Updater(optimizer, lr_scheduler)  # Uses static LR schedule if `lr_scheduler` is omitted
+updater = Updater(optimizer, lr_scheduler)  # Uses static LR scheduler if `lr_scheduler` is omitted
 mechanic = Mechanic(updater)
 ```
 
@@ -75,6 +75,10 @@ for epoch in range(num_epochs):
     lr_scheduler.step()   
 ```
 
+## Save/load state
+
+TODO
+
 # Example
 
 This figure shows the convergence of the (average) learning rate scale on a toy example:
@@ -85,7 +89,7 @@ The learning rate scale dynamics show the "overshoot then settle" behavior obser
 
 # TODO
 
-- [ ] Add state save/restore
+- [x] Add state save/restore
 - [ ] Double-check OOO
 
 # References
