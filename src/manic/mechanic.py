@@ -209,12 +209,9 @@ class Mechanic(LRScheduler):
         self._last_lr = [s_sum for group in base_optimizer.param_groups]
 
     def state_dict(self) -> dict[str, Any]:
-        """Return Mechanic state dict."""
-
-    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
-        """
-        Load Mechanic state dict.
-
-        Args:
-            state_dict: State dict to load.
-        """
+        """Make `Mechanic` state dict."""
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in ["optimizer", "_updater"]
+        }

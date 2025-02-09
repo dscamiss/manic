@@ -9,8 +9,8 @@ from jaxtyping import Float, jaxtyped
 from torch import Tensor, nn
 from typeguard import typechecked as typechecker
 
-from src.manic.updater import Updater
 from src.manic.types import ParamTensorDict
+from src.manic.updater import Updater
 
 _SGD_UPDATERS = ["sgd_store_delta", "sgd_compute_delta"]
 
@@ -68,6 +68,7 @@ def test_refresh_updates(
     for p in model.parameters():
         update = sgd.get_update(p)
         assert torch.allclose(update, -1.0 * lr * p.grad), err_str
+
 
 def test_refresh_updates_side_effects(model: nn.Module, sgd: Updater) -> None:
     """Test `_refresh_updates()` for side effects."""

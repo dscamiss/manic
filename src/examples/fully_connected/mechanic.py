@@ -91,7 +91,7 @@ class Trainer:
         self.criterion = nn.MSELoss()
 
         # Make Updater with SGD and static LR scheduler
-        self.updater = Updater(torch.optim.SGD(self.model.parameters(), lr=1e-3))
+        self.updater = Updater(torch.optim.SGD(self.model.parameters()))
 
         # Make Mechanic
         self.mechanic = Mechanic(self.updater)

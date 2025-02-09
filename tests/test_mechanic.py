@@ -11,10 +11,12 @@ from torch.optim.lr_scheduler import LRScheduler
 from typeguard import typechecked as typechecker
 
 from src.manic.mechanic import Mechanic, MechanicParams
-from src.manic.updater import Updater
 from src.manic.types import ParamTensorDict
+from src.manic.updater import Updater
 
 _MECHANIC_LR_SCHEDULERS = ["mechanic_store_delta", "mechanic_compute_delta"]
+
+# TODO: Add test cases with multiple parameter groups.
 
 
 @pytest.fixture(name="mechanic_params")
@@ -175,3 +177,54 @@ def test_step(
     for p in model.parameters():
         p_expected = ref_params[p] + torch.sum(s_expected) * p.grad
         assert torch.allclose(p, p_expected), "Error in parameter values"
+
+
+@jaxtyped(typechecker=typechecker)
+def test_save_and_load_state(
+    model: nn.Module, x: Float[Tensor, "..."], y: Float[Tensor, "..."]
+) -> None:
+    """Test save and load state dicts."""
+    base_optimizer_type = torch.optim.AdamW
+
+    # Make first `Mechanic`
+    optimizer_1 = base_optimizer_type(model.parameters())
+    updater_1 = Updater(optimizer_1)
+    mechanic_1 = Mechanic(updater_1)
+
+    # Run a few Mechanic steps to warm up internal states
+    for _ in range(100):
+        x = torch.randn_like(x)
+        y = torch.randn_like(y)
+        updater_1.base_optimizer.zero_grad()
+        torch.nn.MSELoss()(model(x), y).backward()
+        mechanic_1.step()
+        updater_1.step()
+
+    # Save first states
+    updater_1_state = updater_1.state_dict()
+    mechanic_1_state = mechanic_1.state_dict()
+
+    # Make second `Mechanic`
+    optimizer_2 = base_optimizer_type(model.parameters())
+    updater_2 = Updater(optimizer_2)
+    mechanic_2 = Mechanic(updater_2)
+
+    # Load first states
+    updater_2.load_state_dict(updater_1_state)
+    mechanic_2.load_state_dict(mechanic_1_state)
+    mechanic_2.optimizer = updater_2.base_optimizer
+
+    # Compare internal states over further Mechanic steps
+    state_1 = mechanic_1._mechanic_state, updater_1._updater_state
+    state_2 = mechanic_2._mechanic_state, updater_2._updater_state
+    for _ in range(10):
+        x = torch.randn_like(x)
+        y = torch.randn_like(y)
+        updater_1.base_optimizer.zero_grad()
+        updater_2.base_optimizer.zero_grad()
+        torch.nn.MSELoss()(model(x), y).backward()
+        mechanic_1.step()
+        updater_1.step()
+        mechanic_2.step()
+        updater_2.step()
+        assert state_1 == state_2, "Error in states"

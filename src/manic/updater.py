@@ -8,7 +8,7 @@ References:
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 from jaxtyping import Float, jaxtyped
@@ -158,34 +158,6 @@ class Updater:
         state.s_sum_prev = state.s_sum
         state.s_sum = s_sum
 
-    @jaxtyped(typechecker=typechecker)
-    @torch.no_grad()
-    def get_delta(self, x: nn.Parameter, s_sum: Optional[float] = None) -> Float[Tensor, "..."]:
-        """
-        Get "delta" value for a particular model parameter.
-
-        Args:
-            x: Model parameter.
-            s_sum: Sum of `s` components value to use (default = None).  This
-                is only effective when the `store_delta` parameter is `True`.
-
-        Returns:
-            The "delta" value for model parameter `x`.
-        """
-        state = self._updater_state
-        params = self._updater_params
-
-        if params.store_delta:
-            return state.deltas[x]
-
-        if s_sum is None:
-            s_sum = state.s_sum_prev
-
-        s_sum = state.s_sum_prev if s_sum is None else state.s_sum
-        x_ref = state.ref_model_params[x]
-        denom = s_sum + params.epsilon
-        return x.clone().sub_(x_ref).div_(denom)
-
     @torch.no_grad()
     def _refresh_model_params(self) -> None:
         """Refresh model parameter values."""
@@ -223,6 +195,34 @@ class Updater:
                 x.copy_(self._updater_state.model_params[x])
 
     @jaxtyped(typechecker=typechecker)
+    @torch.no_grad()
+    def get_delta(self, x: nn.Parameter, s_sum: Optional[float] = None) -> Float[Tensor, "..."]:
+        """
+        Get "delta" value for a particular model parameter.
+
+        Args:
+            x: Model parameter.
+            s_sum: Sum of `s` components value to use (default = None).  This
+                is only effective when the `store_delta` parameter is `True`.
+
+        Returns:
+            The "delta" value for model parameter `x`.
+        """
+        state = self._updater_state
+        params = self._updater_params
+
+        if params.store_delta:
+            return state.deltas[x]
+
+        if s_sum is None:
+            s_sum = state.s_sum_prev
+
+        s_sum = state.s_sum_prev if s_sum is None else state.s_sum
+        x_ref = state.ref_model_params[x]
+        denom = s_sum + params.epsilon
+        return x.clone().sub_(x_ref).div_(denom)
+
+    @jaxtyped(typechecker=typechecker)
     def get_update(self, x: nn.Parameter) -> Float[Tensor, "..."]:
         """
         Get update for a particular parameter.
@@ -239,6 +239,14 @@ class Updater:
         if x not in self._updater_state.updates:
             raise ValueError("Update is not available.")
         return self._updater_state.updates[x]
+
+    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
+        """Load `Updater` state."""
+        self.__dict__.update(state_dict)
+
+    def state_dict(self) -> dict[str, Any]:
+        """Return `Updater` state as a dict."""
+        return self.__dict__
 
     @torch.no_grad()
     def step(self) -> None:
