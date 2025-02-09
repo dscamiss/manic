@@ -148,9 +148,7 @@ class Trainer:
 
             # Console reporting
             print(
-                f"epoch {epoch + 1}: "
-                f"loss: {epoch_loss:.4f}, "
-                f"LR scale: {epoch_lr_scale:.6f}"
+                f"epoch {epoch + 1}: " f"loss: {epoch_loss:.4f}, " f"LR scale: {epoch_lr_scale:.6f}"
             )
 
         return self.train_losses, self.lr_scales

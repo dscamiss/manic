@@ -1,4 +1,4 @@
-"""Test code for Updater class."""
+"""Test code for `Updater` class."""
 
 # flake8: noqa=D401
 # pylint: disable=protected-access
