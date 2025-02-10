@@ -1,4 +1,4 @@
-# manic
+# `manic`
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?logo=PyTorch&logoColor=white)
