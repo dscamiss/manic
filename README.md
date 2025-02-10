@@ -18,8 +18,9 @@ Mechanic works alongside an optimizer and learning rate scheduler to tune the le
 
 For concreteness, suppose that the optimizer is vanilla SGD, so that one gradient descent iteration is
 $\theta_{t+1} \leftarrow \theta_t - \alpha_t \nabla_\theta L(\theta_t)$, where $\alpha_t$ is the learning rate.  Generally
-speaking, the learning rate scheduler needs to be tuned to select the base learning rate.  This amounts to searching 
-for a scale factor $\sigma$ such that $\theta_{t+1} \leftarrow \theta_t - \sigma \alpha_t \nabla_\theta L(\theta_t)$ has good convergence 
+speaking, the learning rate scheduler needs to be tuned to select the base learning rate (that is, the initial learning rate
+$\alpha_1$ before any adaptation).  This amounts to searching for a scale factor $\sigma$ such that 
+$\theta_{t+1} \leftarrow \theta_t - \sigma \alpha_t \nabla_\theta L(\theta_t)$ has good convergence 
 properties.  The search process is usually *ad hoc* and involves multiple training runs.
 
 In contrast, Mechanic automatically selects the scale factor at each gradient descent iteration.  The selection
