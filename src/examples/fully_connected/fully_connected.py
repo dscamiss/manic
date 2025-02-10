@@ -59,6 +59,7 @@ class FullyConnected(nn.Module):
 
         self.layers = nn.Sequential(*layers)
 
+    # mypy complains about `nn.Sequential.forward()` lack of return type
     @jaxtyped(typechecker=typechecker)
     def forward(self, x: Float[Tensor, "b input_dim"]) -> Float[Tensor, "b output_dim"]:
-        return self.layers(x)
+        return self.layers(x)  # type: ignore[no-any-return]

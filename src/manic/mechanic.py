@@ -8,7 +8,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 import torch
 from jaxtyping import jaxtyped
@@ -18,6 +18,8 @@ from typeguard import typechecked as typechecker
 
 from src.manic.constants import EPSILON
 from src.manic.updater import Updater
+
+_DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
 
 # flake8: noqa=DCO010
 # pylint: disable=invalid-name,not-callable
@@ -35,7 +37,8 @@ class MechanicParams:
         epsilon: \epsilon (scalar)
     """
 
-    beta: Tensor = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
+    beta: Tensor = _DEFAULT_BETA
+    beta_sq: Tensor = _DEFAULT_BETA * _DEFAULT_BETA
     decay: float = 1e-2
     s_init: float = 1e-8
     epsilon: float = EPSILON
@@ -83,7 +86,6 @@ class Mechanic(LRScheduler):
         self._updater = updater
         self._mechanic_params = mechanic_params
         self._mechanic_state = MechanicState()
-        self._last_lr = None
 
         # Constructor is here since initial `get_lr()` needs `self._updater`
         super().__init__(updater.base_optimizer, last_epoch)
@@ -92,8 +94,7 @@ class Mechanic(LRScheduler):
         self._initialize_state()
 
         # Compute derived parameter(s)
-        beta = self._mechanic_params.beta
-        self._mechanic_params.beta_sq = torch.pow(beta, 2.0)
+        self._mechanic_params.beta_sq = torch.pow(mechanic_params.beta, 2.0)
 
     @torch.no_grad()
     def _initialize_state(self) -> None:
@@ -190,10 +191,13 @@ class Mechanic(LRScheduler):
         s_sum = torch.sum(self._mechanic_state.s).item()
         return [s_sum for _ in base_optimizer.param_groups]
 
-    # Note: Pylint complains about omitting deprecated `epoch` argument
     @torch.no_grad()
-    def step(self) -> Any:  # pylint: disable=arguments-differ
+    def step(self, epoch: Optional[int] = None) -> Any:
         """Run one Mechanic step."""
+        # Check for deprecated epoch argument
+        if epoch is not None:
+            raise NotImplementedError("epoch argument is unsupported")
+
         # Increment last epoch index
         # - This is a misnomer, since for Mechanic this is the batch index
         self.last_epoch += 1
@@ -206,7 +210,9 @@ class Mechanic(LRScheduler):
 
         # Record last LR for consistency with the `LRScheduler` implementation
         base_optimizer = self._updater.base_optimizer
-        self._last_lr = [s_sum for group in base_optimizer.param_groups]
+        self._last_lr = [  # pylint: disable=attribute-defined-outside-init
+            s_sum for group in base_optimizer.param_groups
+        ]
 
     def state_dict(self) -> dict[str, Any]:
         """Make `Mechanic` state dict."""
