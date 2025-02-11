@@ -1,1 +1,1 @@
-"""/src/examples/__init__.py"""
+"""/src/examples/__init__.py."""
