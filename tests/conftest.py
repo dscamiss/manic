@@ -1,6 +1,9 @@
 """Test configuration."""
 
+# flake8: noqa=D401
+
 import random
+from typing import Any
 
 import numpy as np
 import pytest
@@ -9,8 +12,6 @@ from jaxtyping import Float
 from torch import Tensor, nn
 
 from src.manic.updater import Updater, UpdaterParams
-
-# flake8: noqa=D401
 
 
 def set_seed(seed: int) -> None:
@@ -58,17 +59,27 @@ def fixture_model(dims: dict[str, int]) -> nn.Module:
     )
 
 
+@pytest.fixture(name="param_groups")
+def fixture_param_groups(model: nn.Module) -> list[dict[str, Any]]:
+    """Parameter groups."""
+    return [
+        {"params": model[0].parameters(), "lr": 1e-1},
+        {"params": model[2].parameters(), "lr": 1e-2},
+        {"params": model[4].parameters(), "lr": 1e-3},
+    ]
+
+
 @pytest.fixture(name="sgd_store_delta")
-def fixture_sgd_store_delta(model: nn.Module) -> Updater:
+def fixture_sgd_store_delta(param_groups: list[dict[str, Any]]) -> Updater:
     """`Updater` with SGD base optimizer and static LR scheduler."""
-    base_optimizer = torch.optim.SGD(model.parameters())
+    base_optimizer = torch.optim.SGD(param_groups)
     return Updater(base_optimizer)
 
 
 @pytest.fixture(name="sgd_compute_delta")
-def fixture_sgd_compute_delta(model: nn.Module) -> Updater:
+def fixture_sgd_compute_delta(param_groups: list[dict[str, Any]]) -> Updater:
     """`Updater` with SGD base optimizer and static LR scheduler."""
-    base_optimizer = torch.optim.SGD(model.parameters())
+    base_optimizer = torch.optim.SGD(param_groups)
     updater_params = UpdaterParams()
     updater_params.store_delta = False
     return Updater(base_optimizer, None, updater_params)

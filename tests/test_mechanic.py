@@ -17,8 +17,6 @@ from src.manic.updater import Updater
 
 _MECHANIC_LR_SCHEDULERS = ["mechanic_store_delta", "mechanic_compute_delta"]
 
-# TODO: Add test cases with multiple parameter groups.
-
 
 @pytest.fixture(name="mechanic_params")
 def fixture_mechanic_params() -> MechanicParams:

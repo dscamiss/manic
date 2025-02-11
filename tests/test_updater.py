@@ -88,10 +88,11 @@ def test_refresh_updates(
 
     # Check update values
     err_str = "Error in update values"
-    lr = base_optimizer.param_groups[0]["lr"]
-    for p in model.parameters():
-        update = sgd.get_update(p)
-        assert torch.allclose(update, -1.0 * lr * p.grad), err_str
+    for group in base_optimizer.param_groups:
+        lr = group["lr"]
+        for p in group["params"]:
+            update = sgd.get_update(p)
+            assert torch.allclose(update, -1.0 * lr * p.grad), err_str
 
 
 def test_refresh_updates_side_effects(model: nn.Module, sgd: Updater) -> None:

@@ -7,6 +7,9 @@ References:
     Mechanic: A Learning Rate Tuner, arXiv:2306.00144.
 """
 
+# flake8: noqa=DCO010
+# pylint: disable=invalid-name,not-callable
+
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -20,9 +23,6 @@ from src.manic.constants import EPSILON
 from src.manic.updater import Updater
 
 _DEFAULT_BETA = Tensor([0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999])
-
-# flake8: noqa=DCO010
-# pylint: disable=invalid-name,not-callable
 
 
 @dataclass

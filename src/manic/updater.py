@@ -7,6 +7,9 @@ References:
     Mechanic: A Learning Rate Tuner, arXiv:2306.00144.
 """
 
+# flake8: noqa=DCO010
+# pylint: disable=too-few-public-methods
+
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -18,9 +21,6 @@ from typeguard import typechecked as typechecker
 
 from src.manic.constants import EPSILON
 from src.manic.types import Optimizer, ParamTensorDict
-
-# flake8: noqa=DCO010
-# pylint: disable=too-few-public-methods
 
 
 class _StaticLRScheduler(LRScheduler):
@@ -88,7 +88,7 @@ class UpdaterState:
 
 
 class Updater:
-    r"""
+    """
     A wrapped optimizer and LR scheduler for use by `Mechanic`.
 
     Args:
