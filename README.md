@@ -11,7 +11,7 @@
 An PyTorch implementation of the Mechanic learning rate scale tuner [1], emphasizing modularity and test 
 coverage.
 
-The reference implementation can be found in [this repository](https://github.com/optimizedlearning/mechanic).
+The implementation by the authors of [1] can be found in [this repository](https://github.com/optimizedlearning/mechanic).
 
 ## Brief background
 
