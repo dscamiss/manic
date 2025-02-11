@@ -1,4 +1,4 @@
-# `manic`
+# `manic` :wrench:
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?logo=PyTorch&logoColor=white)
@@ -11,7 +11,7 @@
 An PyTorch implementation of the Mechanic learning rate scale tuner [1], emphasizing modularity and test 
 coverage.
 
-The reference implementation can be found in [this repository](https://github.com/optimizedlearning/mechanic).
+The implementation by the authors of [1] can be found in [this repository](https://github.com/optimizedlearning/mechanic).
 
 ## Brief background
 
@@ -55,7 +55,7 @@ There are no restrictions on the model, optimizer, or learning rate scheduler.
 
 ## Training
 
-The `manic` paradigm is
+The `manic` training paradigm is
 
 ```python
 for epoch in range(num_epochs):
@@ -66,7 +66,7 @@ for epoch in range(num_epochs):
         updater.step()   
 ```
 
-Note that this is different from the standard paradigm
+Note that this is different from the standard training paradigm
 
 ```python title="Standard method"
 for epoch in range(num_epochs):
