@@ -7,7 +7,8 @@ import torch
 
 
 def set_seed(seed: int) -> None:
-    """Set random seeds etc. to attempt reproducibility.
+    """
+    Set random seeds etc. to attempt reproducibility.
 
     Args:
         seed: Random seed.

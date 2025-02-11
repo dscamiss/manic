@@ -11,7 +11,8 @@ from typeguard import typechecked as typechecker
 
 
 class FullyConnected(nn.Module):
-    """Fully-connected neural network with ReLU activations.
+    """
+    Fully-connected neural network with ReLU activations.
 
     Args:
         input_dim: Input dimension.
