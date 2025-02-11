@@ -1,4 +1,4 @@
-# `manic`
+# `manic` :wrench:
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?logo=PyTorch&logoColor=white)
@@ -55,7 +55,7 @@ There are no restrictions on the model, optimizer, or learning rate scheduler.
 
 ## Training
 
-The `manic` paradigm is
+The `manic` training paradigm is
 
 ```python
 for epoch in range(num_epochs):
@@ -66,7 +66,7 @@ for epoch in range(num_epochs):
         updater.step()   
 ```
 
-Note that this is different from the standard paradigm
+Note that this is different from the standard training paradigm
 
 ```python title="Standard method"
 for epoch in range(num_epochs):
