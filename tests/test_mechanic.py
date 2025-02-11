@@ -58,6 +58,12 @@ def test_creation(mechanic_params: MechanicParams, mechanic: Mechanic) -> None:
     assert mechanic._mechanic_params == mechanic_params, "Invalid core parameters"
 
 
+def test_step_epoch_arg(mechanic: Mechanic) -> None:
+    """Test `step()` for expected failure with `epoch` argument provided."""
+    with pytest.raises(ValueError):
+        mechanic.step(epoch=1337)
+
+
 @jaxtyped(typechecker=typechecker)
 def test_step_side_effects(
     model: nn.Module, mechanic: Mechanic, x: Float[Tensor, "..."], y: Float[Tensor, "..."]

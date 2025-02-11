@@ -196,7 +196,7 @@ class Mechanic(LRScheduler):
         """Run one Mechanic step."""
         # Check for deprecated epoch argument
         if epoch is not None:
-            raise NotImplementedError("epoch argument is unsupported")
+            raise ValueError("epoch argument is unsupported")
 
         # Increment last epoch index
         # - This is a misnomer, since for Mechanic this is the batch index
