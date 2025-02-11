@@ -46,7 +46,7 @@ class MechanicParams:
 
 @dataclass
 class MechanicState:
-    r"""
+    """
     Dataclass for `Mechanic` internal state variables.
 
     Correspondence with the variables of Algorithm 1 in [1]:

@@ -23,6 +23,18 @@ def test_class_types(sgd: Updater) -> None:
     assert isinstance(sgd.base_optimizer, torch.optim.SGD), err_str
 
 
+def test_class_types_with_lr_scheduler(model: nn.Module) -> None:
+    """Test `Updater` class types with `lr_scheduler` argument specified."""
+    base_optimizer = torch.optim.SGD(model.parameters())
+    base_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(base_optimizer, 10)
+    sgd = Updater(base_optimizer, base_lr_scheduler)
+
+    err_str = "Invalid class type"
+    assert isinstance(sgd, Updater), err_str
+    assert isinstance(sgd._base_optimizer, type(base_optimizer)), err_str
+    assert isinstance(sgd._base_lr_scheduler, type(base_lr_scheduler)), err_str
+
+
 def test_create_invalid_args(model: nn.Module) -> None:
     """Test `Updater` creation with invalid arguments."""
     base_optimizer = torch.optim.SGD(model.parameters(), maximize=True)
