@@ -23,6 +23,13 @@ def test_class_types(sgd: Updater) -> None:
     assert isinstance(sgd.base_optimizer, torch.optim.SGD), err_str
 
 
+def test_create_invalid_args(model: nn.Module) -> None:
+    """Test `Updater` creation with invalid arguments."""
+    base_optimizer = torch.optim.SGD(model.parameters(), maximize=True)
+    with pytest.raises(ValueError):
+        Updater(base_optimizer)
+
+
 def test_refresh_model_params(model: nn.Module, sgd: Updater) -> None:
     """Test `_refresh_model_params()` behavior."""
     # Make alias for brevity

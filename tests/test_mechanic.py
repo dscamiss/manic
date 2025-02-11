@@ -48,7 +48,7 @@ def fixture_mechanic(mechanic_store_delta: Mechanic) -> Mechanic:
     return mechanic_store_delta
 
 
-def test_creation(mechanic_params: MechanicParams, mechanic: Mechanic) -> None:
+def test_class_types(mechanic_params: MechanicParams, mechanic: Mechanic) -> None:
     """Test `Mechanic` class types."""
     assert isinstance(mechanic, Mechanic), "Invalid class type"
     assert len(type(mechanic).__bases__) == 1, "Invalid inheritance pattern"
@@ -58,8 +58,8 @@ def test_creation(mechanic_params: MechanicParams, mechanic: Mechanic) -> None:
     assert mechanic._mechanic_params == mechanic_params, "Invalid core parameters"
 
 
-def test_step_epoch_arg(mechanic: Mechanic) -> None:
-    """Test `step()` for expected failure with `epoch` argument provided."""
+def test_step_invalid_args(mechanic: Mechanic) -> None:
+    """Test `step()` behavior with invalid arguments."""
     with pytest.raises(ValueError):
         mechanic.step(epoch=1337)
 
