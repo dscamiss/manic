@@ -8,7 +8,8 @@
 ![Build](https://github.com/dscamiss/manic/actions/workflows/python-package.yml/badge.svg)
 [![codecov](https://codecov.io/gh/dscamiss/manic/graph/badge.svg?token=ZWTBITN49T)](https://codecov.io/gh/dscamiss/manic)
 
-An PyTorch implementation of the Mechanic learning rate scale tuner [1].  
+An PyTorch implementation of the Mechanic learning rate scale tuner [1], emphasizing modularity and test 
+coverage.
 
 The reference implementation can be found in [this repository](https://github.com/optimizedlearning/mechanic).
 
