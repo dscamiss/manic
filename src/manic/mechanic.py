@@ -140,7 +140,7 @@ class Mechanic(LRScheduler):
     @torch.no_grad()
     def _compute_aux_states(self) -> None:
         """
-        Compute the current auxiliary states `m`, `V`, `r`, and `W`.
+        Compute the current auxiliary states `m`, `v`, `r`, and `W`.
 
         This implements lines 11 through 15 of Algorithm 1 in [1].
         """
